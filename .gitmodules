@@ -1,0 +1,3 @@
+[submodule "external/evk"]
+	path = external/evk
+	url = https://github.com/fknfilewalker/evk.git
