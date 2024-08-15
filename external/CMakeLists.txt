@@ -1,4 +1,4 @@
-set(SLANG_VERSION "2024.9.1")
+set(SLANG_VERSION "2024.9.2")
 
 include(FetchContent)    
 if(WIN32)
@@ -21,6 +21,11 @@ if(WIN32)
 elseif(APPLE)
     set_target_properties(slang PROPERTIES
         IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.dylib
+        INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
+    )
+elseif(UNIX)
+    set_target_properties(slang PROPERTIES
+        IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.so
         INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
     )
 endif()
