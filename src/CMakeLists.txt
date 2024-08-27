@@ -1,8 +1,13 @@
-add_library(${DYSLANG_COMPILER} STATIC slangc.cpp)
-add_library(tamashii::${DYSLANG_COMPILER} ALIAS ${DYSLANG_COMPILER})
+add_library(${DYSLANG_LIBRARY} STATIC 
+    ${DYSLANG_INCLUDE_DIR}/dyslang/dyslang.h
+    ${DYSLANG_INCLUDE_DIR}/dyslang/slangc.h slangc.cpp 
+    ${DYSLANG_INCLUDE_DIR}/dyslang/plugin.h plugin.cpp 
+    ${DYSLANG_INCLUDE_DIR}/dyslang/properties.h 
+    ${DYSLANG_INCLUDE_DIR}/dyslang/platform.h)
+add_library(tamashii::${DYSLANG_LIBRARY} ALIAS ${DYSLANG_LIBRARY})
 
-target_include_directories(${DYSLANG_COMPILER} PUBLIC "${DYSLANG_INCLUDE_DIR}")
-set_target_properties(${DYSLANG_COMPILER} PROPERTIES FOLDER ${DYSLANG_COMPILER_FOLDER})
+target_include_directories(${DYSLANG_LIBRARY} PUBLIC "${DYSLANG_INCLUDE_DIR}")
+set_target_properties(${DYSLANG_LIBRARY} PROPERTIES FOLDER ${DYSLANG_FOLDER})
 
-add_dependencies(${DYSLANG_COMPILER} slang)
-target_link_libraries(${DYSLANG_COMPILER} PUBLIC slang)
+add_dependencies(${DYSLANG_LIBRARY} slang)
+target_link_libraries(${DYSLANG_LIBRARY} PUBLIC slang)

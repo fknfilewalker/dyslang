@@ -18,22 +18,35 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 endif()
 
 # PROJECT
-project(Dyslang DESCRIPTION "Dyslang" LANGUAGES CXX C)
+project(dyslang DESCRIPTION "dyslang" LANGUAGES CXX C)
 
 set(DYSLANG_PLUGIN_COMPILER dyslang_plugin_compiler)
-set(DYSLANG_COMPILER dyslang_compiler)
+set(DYSLANG_LIBRARY dyslang_lib)
 
-set(DYSLANG_EXTERNAL_FOLDER "External")
-set(DYSLANG_COMPILER_FOLDER "Compilers")
-set(DYSLANG_PLUGIN_FOLDER "Plugins")
-set(DYSLANG_TEST_FOLDER "Test")
+set(DYSLANG_FOLDER "dyslang")
+set(DYSLANG_TEST_FOLDER "dyslang_tests")
 
 set(DYSLANG_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(DYSLANG_INCLUDE_DIR "${DYSLANG_SOURCE_DIR}/include")
-set(DYSLANG_EXTERNAL_DIR "${DYSLANG_SOURCE_DIR}/external")
+
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    set(SLANG_IS_TOPLEVEL_PROJECT TRUE)
+else()
+    set(SLANG_IS_TOPLEVEL_PROJECT FALSE)
+endif()
+
+set(DYSLANG_SLANG_VERSION "2024.9.2")
+if(WIN32)
+    set(DYSLANG_SLANG_OS "windows-x86_64")
+elseif(APPLE)
+    set(DYSLANG_SLANG_OS "macos-aarch64")
+elseif(UNIX)
+    set(DYSLANG_SLANG_OS "linux-x86_64")
+endif()
+include(FetchContent)    
 
 # COMPILER
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /Qpar")
@@ -42,19 +55,35 @@ else()
 endif()
 
 if(WIN32)
-	add_definitions(
-		-DNOMINMAX
-		-D_SILENCE_CXX17_UNCAUGHT_EXCEPTION_DEPRECATION_WARNING
-		-D_CRT_SECURE_NO_WARNINGS
-		-D_CRT_NONSTDC_NO_DEPRECATE
-		-D_SCL_SECURE_NO_WARNINGS
-	)
+	add_definitions(-DNOMINMAX)
 endif()
 
+FetchContent_Populate(slang_zip URL https://github.com/shader-slang/slang/releases/download/v${DYSLANG_SLANG_VERSION}/slang-${DYSLANG_SLANG_VERSION}-${DYSLANG_SLANG_OS}.zip QUIET)
+message(STATUS "Slang dir: ${slang_zip_SOURCE_DIR}")
+add_library(slang SHARED IMPORTED GLOBAL)
+add_library(slang::slang ALIAS slang)
+if(WIN32)
+    set_target_properties(slang PROPERTIES
+        IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/bin/slang.dll
+        IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang.lib
+        INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
+    )
+elseif(APPLE)
+    set_target_properties(slang PROPERTIES
+        IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.dylib
+        INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
+    )
+elseif(UNIX)
+    set_target_properties(slang PROPERTIES
+        IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.so
+        INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
+    )
+endif()
 
-add_subdirectory(external)
 add_subdirectory(plugin_compiler)
 add_subdirectory(src)
-add_subdirectory(tests)
 
+if(SLANG_IS_TOPLEVEL_PROJECT)
+	add_subdirectory(tests)
+endif()
 

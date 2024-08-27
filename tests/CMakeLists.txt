@@ -24,4 +24,14 @@ function(add_target target)
     install(TARGETS ${target} CONFIGURATIONS Release DESTINATION "release")
 endfunction(add_target target)
 
-add_target(slang_interface_type_conformance DEPS ${DYSLANG_COMPILER} SOURCES "slang_interface_type_conformance/main.cpp" "slang_interface_type_conformance/generic-interface-conformance.slang")
+add_target(slang_interface_type_conformance DEPS ${DYSLANG_LIBRARY} SOURCES "slang_interface_type_conformance/main.cpp" "slang_interface_type_conformance/interface_from_buffer.slang")
+
+set(EMITTER_VARIANTS 
+    "float_rgb:<float>"
+    "double_rgb:<double>"
+)
+dyslang_add_plugin(load_plugins/point.slang ${EMITTER_VARIANTS})
+add_target(load_plugins DEPS ${DYSLANG_LIBRARY}
+    SOURCES "load_plugins/main.cpp" "load_plugins/emitter.slang" "load_plugins/point.slang" "load_plugins/interface_test.slang"
+)
+dyslang_copy_plugins(load_plugins)
