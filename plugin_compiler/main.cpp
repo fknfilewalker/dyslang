@@ -104,7 +104,7 @@ std::string create_variant_define(std::string variants) {
     std::string define, sep;
     for (const auto& variant : variant_list) {
         auto v = split(variant, ':');
-        define += sep + "(" + v[0] + ", " + v[1] + ")";
+        define += sep + "(" + v[0] + ", (" + v[1] + "))";
         sep = ", ";
     }
     return define;

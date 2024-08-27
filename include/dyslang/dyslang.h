@@ -88,17 +88,17 @@
    */
 #define MAP_LIST_UD_I(f, userdata, ...) EVAL(MAP_LIST2_UD_I(f, userdata, 0, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
 
-   // helper
+// helper
 #define JOIN2(a, b) a b
 #define UNPACK2(a, b) a, b
 
-// for zipping variants with pre, middle, post
+// for zipping variants
 #define ZIP(PAIR, X) (UNPACK2 PAIR, UNPACK2 X)
 #define ZIP_PAIR(X,...) MAP_LIST_UD(ZIP, X, __VA_ARGS__)
 #define VARIANTS_ZIP(NAME, TRANSFORMATION, ...) ZIP_PAIR((NAME, TRANSFORMATION), __VA_ARGS__)
 
 // generating return variants
-#define ADD_IF_RETURN(VARIANT, RESULT, NAME, TRANSFORMATION) if (variant == #VARIANT) return TRANSFORMATION(NAME, RESULT);
+#define ADD_IF_RETURN(VARIANT_STRING, VARIANT_TYPE, NAME, TRANSFORMATION) if (variant == #VARIANT_STRING) return TRANSFORMATION(NAME, VARIANT_TYPE);
 #define ADD_IF_RETURN_PAIR(pair) ADD_IF_RETURN pair
 #define RETURN_VARIANTS(...) MAP(ADD_IF_RETURN_PAIR, __VA_ARGS__)
 #define IMPLEMENT_VARIANTS(NAME, TRANSFORMATION, ...) RETURN_VARIANTS(VARIANTS_ZIP(NAME, TRANSFORMATION, __VA_ARGS__))
@@ -108,12 +108,14 @@
 #define GET_VARIANT_PAIR(X) GET_VARIANT X
 #define GET_VARIANT_STRING(...) MAP(GET_VARIANT_PAIR, __VA_ARGS__)
 
-// args
-#define IDENTITY(NAME, VARIANT) VARIANT
-#define STRINGIFY(NAME, VARIANT) #NAME #VARIANT
-#define SIZE_OF(NAME, VARIANT) sizeof(NAME VARIANT)
-#define CREATE_OBJECT_INPLACE(NAME, VARIANT) __create_object_inplace_helper<NAME VARIANT>(ptr, NAME VARIANT({props}))
-#define TRAVERSE_OBJECT(NAME, VARIANT) Ptr<NAME VARIANT>(ptr).traverse({props})
+#define UNWRAP_VARIANT(...) __VA_ARGS__
+#define UNWRAP_VARIANT_STRING(...) #__VA_ARGS__
+// args (... are the template types)
+#define IDENTITY(NAME, ...) UNWRAP_VARIANT __VA_ARGS__
+#define STRINGIFY(NAME, ...) #NAME UNWRAP_VARIANT_STRING __VA_ARGS__
+#define SIZE_OF(NAME, ...) sizeof(NAME UNWRAP_VARIANT __VA_ARGS__)
+#define CREATE_OBJECT_INPLACE(NAME, ...) __create_object_inplace_helper<NAME UNWRAP_VARIANT __VA_ARGS__>(ptr, NAME UNWRAP_VARIANT __VA_ARGS__({props}))
+#define TRAVERSE_OBJECT(NAME, ...) Ptr<NAME UNWRAP_VARIANT __VA_ARGS__>(ptr).traverse({props})
 
 // set by plugincompiler
 #ifndef __DYSLANG_VARIANTS__
@@ -130,7 +132,7 @@
 //#define IMPLEMENTATION_PARENTHESIS(NAME, X) (NAME<X>)
 //#define INTERFACE_PARENTHESIS(x) (INTERFACE<x>)
 //#define CREATE(x) <IMPLEMENTATION<x>>(ptr, IMPLEMENTATION<x>({props}))
-//#define VARIANTS_RAW (float_rgb, <float>), (double_rgb, <double>)
+//#define VARIANTS_RAW (float_rgb, ()), (double_rgb, (<double, double, float>))
 //#define VARIANTS_RAW_NON_TEMPLATE (float_rgb, )
 //const char* test(const char* variant) {
 //	GET_VARIANT_STRING(VARIANTS_RAW)
