@@ -177,23 +177,6 @@ _UUID
 #define vbegin(RETURN) virtual SLANG_NO_THROW RETURN SLANG_MCALL  // for interface methods
 #define vend = 0        // for interface methods
 
-//__declspec(dllexport)
-// #ifndef _SLANG_MODULE_IR
-// #define _SLANG_MODULE_IR ""
-// #endif
-// #if _WIN32
-// #define EXPORT_PLUGIN extern "C" __declspec(dllexport)
-// #define EXPORT_FUNCTION __declspec(dllexport)
-// #else
-// #define EXPORT_PLUGIN
-// #define EXPORT_FUNCTION
-// #endif
-// #define IMPLEMENT_PLUGIN(INTERFACE, NAME) \
-//     EXPORT_PLUGIN const char* __interface_name() { return #INTERFACE; } \
-//     EXPORT_PLUGIN const char* __implementation_name() { return #NAME; } \
-//     EXPORT_PLUGIN unsigned int __implementation_size() { return sizeof(NAME); } \
-//     EXPORT_PLUGIN const char* __slang_module_ir() { return _SLANG_MODULE_IR; }
-
 #elif defined(__SLANG__)
 #define slang_public public
 #define typealias typealias
@@ -269,31 +252,12 @@ bool operator!=(CString left, CString right)
 	export __extern_cpp void __traverse(IProperties props, NativeString variant, Ptr<void> ptr) {\
 		IMPLEMENT_VARIANTS(IMPLEMENTATION, TRAVERSE_OBJECT, __DYSLANG_VARIANTS__)\
 	}
-/* not used */
-/*Ptr<void> __create_object_helper<T>(T) {\
-    __intrinsic_asm R"(new $T0())";\
-}\
-export __extern_cpp Ptr<void> __create_object(IProperties props, PluginVariant v) {\
-    if (v == PluginVariant::Float) return __create_object_helper<IMPLEMENTATION<float>>({});\
-    if (v == PluginVariant::Double) return __create_object_helper<IMPLEMENTATION<double>>({});\
-    return nullptr;\
-}\
-void __destroy_object_helper<T>(T, Ptr<void> ptr) {\
-    __intrinsic_asm R"(delete static_cast<$T0*>($1))";\
-}\
-export __extern_cpp Ptr<void> __destroy_object(PluginVariant v, Ptr<void> ptr) {\
-    if (v == PluginVariant::Float) __destroy_object_helper<IMPLEMENTATION<float>>({}, ptr);\
-    if (v == PluginVariant::Double) __destroy_object_helper<IMPLEMENTATION<double>>({}, ptr);\
-    return nullptr;\
-}*/
 #else
 #define IMPLEMENT_PLUGIN(INTERFACE, NAME)
 #endif
 #endif
 
-
 #ifndef __SLANG__
-
 #include <variant>
 #include <iostream>
 #include <map>
@@ -426,7 +390,6 @@ struct Texture2DRef
 
 namespace dyslang
 {
-
     interfaceUUID(
         IProperties,
         UUID(A,2,F,5,4,8,6,6, 7,A,E,F, 4,9,0,5, B,4,C,E, 4,7, A,C, 7,3, C,A, 3,C, 0,7)

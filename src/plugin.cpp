@@ -55,22 +55,3 @@ std::string dyslang::Plugin::implementation_variant_name(const char* variant) co
 std::string dyslang::Plugin::to_string() const {
     return "Plugin:\n Interface: " + interface_name + "\n Implementation: " + implementation_name;
 }
-
-dyslang::PluginManager& dyslang::PluginManager::the()
-{
-    static PluginManager instance;
-    return instance;
-}
-
-dyslang::Plugin& dyslang::PluginManager::find_plugin(const std::string& name)
-{
-    auto& plugin_manager = the();
-	for (auto& plugin : plugin_manager.plugins) {
-		if (plugin.interface_name == name) {
-			return plugin;
-		}
-	}
-	std::string path = (plugin_manager.plugin_directory / std::filesystem::path(name)).string();
-    plugin_manager.plugins.emplace_back(path);
-	return plugin_manager.plugins.back();
-}

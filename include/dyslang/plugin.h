@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include <functional>
-#include <deque>
 #include <filesystem>
 #include <dyslang/platform.h>
 
@@ -86,15 +85,5 @@ namespace dyslang
         std::string interface_name;
         std::string implementation_name;
         ObjectData data;
-    };
-
-    struct PluginManager {
-        static PluginManager& the();
-        static Plugin& find_plugin(const std::string& name);
-
-        std::filesystem::path plugin_directory;
-    private:
-        PluginManager() : plugin_directory{ "plugins" } {}
-        std::deque<Plugin> plugins;
     };
 }

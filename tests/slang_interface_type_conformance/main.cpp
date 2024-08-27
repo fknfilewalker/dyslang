@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
     std::vector<const char*> includes;
     std::vector<Slangc::ArgPair> defines;
 
-    Slangc slangc(includes, defines);
+    Slangc slangc{ includes, defines };
     std::string_view moduleName = "slang_interface_type_conformance/interface_from_buffer";
     slangc.addModule(moduleName);
     slangc.addEntryPoint(moduleName, "main");
@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
     for (auto& o : output) {
         std::cout << o;
     }
-    std::cout << std::endl;
+    std::cout << '\n';
 
     return 0;
 }

@@ -31,10 +31,12 @@ int main(int argc, char* argv[]) {
     std::cout << "Working Dir: " << path << '\n';
 
     const char* variant = "float_rgb";
-    dyslang::Plugin& plugin = dyslang::PluginManager::find_plugin("point");
+
+    // load plugin
+    dyslang::Plugin plugin{ "plugins/point" };
     std::cout << plugin.to_string() << '\n';
 
-    // write plugin data
+	// set properties 
     dyslang::Properties props_in;
     props_in.properties["color"] = dyslang::f64v3{ 3.0f, 4.0, 1000 };
     props_in.properties["intensity"] = 15.0f;
@@ -43,18 +45,18 @@ int main(int argc, char* argv[]) {
     auto light = plugin.create<void>(props_in, variant);
     std::cout << light->to_string() << '\n';
 
-    // read plugin data
+    // read back obj data
     dyslang::Properties props_out;
     light->traverse(props_out);
     std::cout << props_out.to_string() << '\n';
 
-    std::vector<const char*> includes = { /*"../src/plugins/emitters"*/ };
+    std::vector<const char*> includes;
     std::vector<dyslang::Slangc::ArgPair> defines;
 
     // compile
     auto blob = BinaryBlob::create(plugin.slang_module);
 
-    dyslang::Slangc slangc(includes, defines);
+    dyslang::Slangc slangc{ includes, defines };
     std::string_view moduleName = "load_plugins/interface_test";
     slangc.addModule(moduleName);
     slangc.addModule(light->implementation_name, light->implementation_name, blob);
@@ -64,7 +66,7 @@ int main(int argc, char* argv[]) {
     dyslang::Slangc::Hash hash = slangc.compose();
     std::vector<uint8_t> output = slangc.compile();
 
-    for (auto& o : output) {
+    for (const auto& o : output) {
         std::cout << o;
     }
     std::cout << '\n';

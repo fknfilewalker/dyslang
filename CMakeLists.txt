@@ -21,7 +21,7 @@ endif()
 project(dyslang DESCRIPTION "dyslang" LANGUAGES CXX C)
 
 set(DYSLANG_PLUGIN_COMPILER dyslang_plugin_compiler)
-set(DYSLANG_LIBRARY dyslang_lib)
+set(DYSLANG_LIBRARY dyslang)
 
 set(DYSLANG_FOLDER "dyslang")
 set(DYSLANG_TEST_FOLDER "dyslang_tests")
