@@ -1,5 +1,5 @@
 import emitter;
-#include "../../include/dyslang/properties.h"
+#include "../../include/dyslang/dyslang.h"
 
 using namespace dyslang;
 struct PointLight<Real : floating_point> : IEmitter<Real> {

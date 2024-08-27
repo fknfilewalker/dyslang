@@ -4,10 +4,11 @@
 #include <deque>
 #include <filesystem>
 #include <dyslang/platform.h>
-#include <dyslang/properties.h>
 
 namespace dyslang
 {
+    struct IProperties;
+    struct Properties;
     struct Plugin;
     template <typename T> struct Object;
     struct ObjectData;
