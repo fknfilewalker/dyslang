@@ -217,14 +217,14 @@ public interface _NAME {
 
 
 #ifdef __SLANG_CPP__
-bool operator==(CString left, CString right)
+bool operator==(dyslang::CString left, dyslang::CString right)
 {
     __requirePrelude(R"(
 		#include <cstring>
     )");
     __intrinsic_asm R"(strcmp($0, $1) == 0)";
 }
-bool operator!=(CString left, CString right)
+bool operator!=(dyslang::CString left, dyslang::CString right)
 {
     return !(left == right);
 }
@@ -248,10 +248,10 @@ bool operator!=(CString left, CString right)
 	void __create_object_inplace_helper<T>(Ptr<void> ptr, T data) {\
 		__intrinsic_asm R"(memcpy($0, &$1, sizeof($T1)))";\
 	}\
-	export __extern_cpp void __create_object(IProperties props, NativeString variant, Ptr<void> ptr) {\
+	export __extern_cpp void __create_object(dyslang::IProperties props, NativeString variant, Ptr<void> ptr) {\
 		IMPLEMENT_VARIANTS(IMPLEMENTATION, CREATE_OBJECT_INPLACE, __DYSLANG_VARIANTS__)\
 	}\
-	export __extern_cpp void __traverse(IProperties props, NativeString variant, Ptr<void> ptr) {\
+	export __extern_cpp void __traverse(dyslang::IProperties props, NativeString variant, Ptr<void> ptr) {\
 		IMPLEMENT_VARIANTS(IMPLEMENTATION, TRAVERSE_OBJECT, __DYSLANG_VARIANTS__)\
 	}
 #else
