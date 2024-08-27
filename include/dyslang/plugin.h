@@ -74,7 +74,7 @@ namespace dyslang
         //T* operator->() { return reinterpret_cast<T*>(data.data()); }
 
         void traverse(Properties& props) {
-            plugin.f_traverse(&props, variant, data.get_data_ptr());
+            plugin.f_traverse((IProperties*)&props, variant, data.get_data_ptr());
         }
 
         [[nodiscard]] std::string to_string() const {
