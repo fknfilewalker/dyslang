@@ -31,7 +31,7 @@ set(EMITTER_VARIANTS
     "double_rgb:<double>"
 )
 dyslang_add_plugin(load_plugins/point.slang ${EMITTER_VARIANTS})
-set_target_properties(point PROPERTIES FOLDER "${DYSLANG_TEST_FOLDER}")
+set_target_properties(point PROPERTIES FOLDER "${DYSLANG_TEST_FOLDER}/plugins")
 add_target(load_plugins DEPS ${DYSLANG_LIBRARY}
     SOURCES "load_plugins/main.cpp" "load_plugins/emitter.slang" "load_plugins/point.slang" "load_plugins/interface_test.slang"
 )

@@ -35,7 +35,7 @@ else()
     set(SLANG_IS_TOPLEVEL_PROJECT FALSE)
 endif()
 
-set(DYSLANG_SLANG_VERSION "2024.9.2")
+set(DYSLANG_SLANG_VERSION "2024.10")
 if(WIN32)
     set(DYSLANG_SLANG_OS "windows-x86_64")
 elseif(APPLE)
