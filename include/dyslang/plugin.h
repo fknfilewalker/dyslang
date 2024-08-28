@@ -2,6 +2,7 @@
 #include <string>
 #include <functional>
 #include <filesystem>
+#include <slang.h>
 #include <dyslang/platform.h>
 
 namespace dyslang
@@ -11,6 +12,23 @@ namespace dyslang
     struct Plugin;
     template <typename T> struct Object;
     struct ObjectData;
+
+    class SlangBinaryBlob : public ISlangBlob
+    {
+    public:
+        SLANG_NO_THROW SlangResult SLANG_MCALL queryInterface(SlangUUID const& uuid, void** outObject) SLANG_OVERRIDE { return SLANG_E_NOT_IMPLEMENTED; }
+        SLANG_NO_THROW uint32_t SLANG_MCALL addRef() SLANG_OVERRIDE { return 1; }
+        SLANG_NO_THROW uint32_t SLANG_MCALL release() SLANG_OVERRIDE { return 1; }
+        // ISlangBlob
+        SLANG_NO_THROW void const* SLANG_MCALL getBufferPointer() SLANG_OVERRIDE { return _ptr; }
+        SLANG_NO_THROW size_t SLANG_MCALL getBufferSize() SLANG_OVERRIDE { return _len; }
+
+        SlangBinaryBlob(const uint8_t* ptr, const size_t len) : _ptr{ ptr }, _len{ len } {}
+        SlangBinaryBlob() = default;
+    protected:
+		const uint8_t* _ptr;
+		size_t _len;
+    };
 
     struct Plugin
     {
@@ -28,13 +46,15 @@ namespace dyslang
         [[nodiscard]] std::string interface_variant_name(const char* variant) const;
         [[nodiscard]] std::string implementation_variant_name(const char* variant) const;
         [[nodiscard]] std::string to_string() const;
+        [[nodiscard]] const SlangBinaryBlob* slang_module_blob() const;
 
         platform::SharedLib lib;
         std::string interface_name;
         std::string implementation_name;
         std::string available_variants;
-        std::vector<uint8_t> slang_module;
+        SlangBinaryBlob slang_module;
 
+		// functions loaded from dylib
         std::function<const char*()> f_interface_name;
         std::function<const char*()> f_implementation_name;
         std::function<const char*()> f_available_variants;
@@ -73,7 +93,7 @@ namespace dyslang
         //T* operator->() { return reinterpret_cast<T*>(data.data()); }
 
         void traverse(Properties& props) {
-            plugin.f_traverse((IProperties*)&props, variant, data.get_data_ptr());
+            plugin.f_traverse(reinterpret_cast<IProperties*>(&props), variant, data.get_data_ptr());
         }
 
         [[nodiscard]] std::string to_string() const {

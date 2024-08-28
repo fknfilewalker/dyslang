@@ -1,9 +1,6 @@
 #include <dyslang/plugin.h>
 #include <string>
 #include <functional>
-#include <iostream>
-#include <fstream>
-#include <deque>
 #include <filesystem>
 #include <stdexcept>
 
@@ -32,14 +29,19 @@ dyslang::Plugin::Plugin(const std::string_view lib_path) : lib{ dyslang::platfor
     implementation_name = f_implementation_name();
     available_variants = f_available_variants();
 
-    // load slang file
-    /*std::string slang_path = dyslang::platform::executable_path + "/" + std::string{ lib_path } + ".slang-module";
-    std::cout << slang_path << std::endl;
-    std::ifstream input(slang_path, std::ios::binary);
-    slang_module = std::vector<uint8_t>(std::istreambuf_iterator<char>(input), {});*/
-    auto slang_module_size = f_slang_module_ir_size();
-    auto slang_module_ptr = f_slang_module_ir_data_ptr();
-    slang_module = std::vector<uint8_t>(slang_module_ptr, slang_module_ptr + slang_module_size);
+    // load external slang module file
+    // std::string slang_path = dyslang::platform::executable_path + "/" + std::string{ lib_path } + ".slang-module";
+    // std::cout << slang_path << '\n';
+    // std::ifstream input(slang_path, std::ios::binary);
+    // slang_module = std::vector<uint8_t>(std::istreambuf_iterator<char>(input), {});
+
+	// load internal slang module
+    // auto slang_module_size = f_slang_module_ir_size();
+    // auto slang_module_ptr = f_slang_module_ir_data_ptr();
+    // slang_module = std::vector<uint8_t>(slang_module_ptr, slang_module_ptr + slang_module_size);
+
+	// direct load slang module from dynamic library
+	slang_module = SlangBinaryBlob{ f_slang_module_ir_data_ptr(), f_slang_module_ir_size() };
 }
 
 std::string dyslang::Plugin::interface_variant_name(const char* variant) const
@@ -54,4 +56,9 @@ std::string dyslang::Plugin::implementation_variant_name(const char* variant) co
 
 std::string dyslang::Plugin::to_string() const {
     return "Plugin:\n Interface: " + interface_name + "\n Implementation: " + implementation_name;
+}
+
+const dyslang::SlangBinaryBlob* dyslang::Plugin::slang_module_blob() const
+{
+    return &slang_module;
 }
