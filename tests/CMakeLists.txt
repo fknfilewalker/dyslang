@@ -35,4 +35,4 @@ set_target_properties(point PROPERTIES FOLDER "${DYSLANG_TEST_FOLDER}/plugins")
 add_target(load_plugins DEPS ${DYSLANG_LIBRARY}
     SOURCES "load_plugins/main.cpp" "load_plugins/emitter.slang" "load_plugins/point.slang" "load_plugins/interface_test.slang"
 )
-dyslang_copy_plugins(load_plugins)
+dyslang_copy_plugins(load_plugins plugins)
