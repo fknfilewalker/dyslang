@@ -144,6 +144,8 @@
 
 #ifdef __cplusplus
 #define slang_public
+#define slang_internal
+#define slang_private
 #define typealias using
 #define gvar(VAR) typename VAR
 #define gtvar(TYPE, VAR) TYPE VAR   // typed template variable
@@ -165,14 +167,15 @@
 
 #define UUID(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, _31) \
 SLANG_COM_INTERFACE(0x##_0 ##_1 ##_2 ##_3 ##_4 ##_5 ##_6 ##_7, 0x##_8 ##_9 ##_10 ##_11, 0x##_12 ##_13 ##_14 ##_15, { 0x##_16 ##_17, 0x##_18 ##_19, 0x##_20 ##_21, 0x##_22 ##_23, 0x##_24 ##_25, 0x##_26 ##_27, 0x##_28 ##_29, 0x##_30 ##_31 } )
-#define pub_interface(_NAME) struct _NAME : public ISlangUnknown {
-#define interfaceUUID(_NAME, _UUID) \
+#define slangInterface(_VISIBILITY, _NAME) struct _NAME : public ISlangUnknown {
+#define slangInterfaceUUID(_VISIBILITY, _NAME, _UUID) \
 struct _NAME : public ISlangUnknown { \
 _UUID
-#define pub_ginterface(_GENERIC, _NAME) \
+
+#define slangGInterface(_VISIBILITY, _GENERIC, _NAME) \
 _GENERIC \
 struct _NAME : public ISlangUnknown {
-#define pub_ginterfaceUUID(_GENERIC, _NAME, _UUID) \
+#define slangGInterfaceUUID(_VISIBILITY, _GENERIC, _NAME, _UUID) \
 _GENERIC \
 struct _NAME : public ISlangUnknown { \
 _UUID
@@ -181,6 +184,8 @@ _UUID
 
 #elif defined(__SLANG__)
 #define slang_public public
+#define slang_internal internal
+#define slang_private private
 #define typealias typealias
 #define gvar(VAR) VAR
 #define gtvar(TYPE, VAR) VAR : TYPE
@@ -200,17 +205,17 @@ _UUID
 
 #define UUID(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, _31) \
     [COM(#_0 #_1 #_2 #_3 #_4 #_5 #_6 #_7 "-" #_8 #_9 #_10 #_11 "-" #_12 #_13 #_14 #_15  "-" #_16 #_17 #_18 #_19 "-" #_20 #_21 "-" #_22 #_23 "-" #_24 #_25 "-" #_26 #_27 "-" #_28 #_29 "-" #_30 #_31)]
-#define pub_interface(_NAME) public interface _NAME {
-#define interfaceUUID(_NAME, _UUID) \
+#define slangInterface(_VISIBILITY, _NAME) _VISIBILITY interface _NAME {
+#define slangInterfaceUUID(_VISIBILITY, _NAME, _UUID) \
 _UUID \
-interface _NAME {
-#define pub_ginterface(_GENERIC, _NAME) \
+_VISIBILITY interface _NAME {
+#define slangGInterface(_VISIBILITY, _GENERIC, _NAME) \
 _GENERIC \
-public interface _NAME {
-#define pub_ginterfaceUUID(_GENERIC, _NAME, _UUID) \
+_VISIBILITY interface _NAME {
+#define slangGInterfaceUUID(_VISIBILITY, _GENERIC, _NAME, _UUID) \
 _UUID \
 _GENERIC \
-public interface _NAME {
+_VISIBILITY interface _NAME {
 #define vbegin(RETURN) RETURN
 #define vend
 #define auto var
@@ -313,59 +318,59 @@ namespace dyslang {
 
 #else
 namespace dyslang {
-	slang_public typealias integral = __BuiltinIntegerType;
-	slang_public typealias floating_point = __BuiltinFloatingPointType;
-	slang_public typealias numeric = __BuiltinArithmeticType;
+	slang_internal typealias integral = __BuiltinIntegerType;
+	slang_internal typealias floating_point = __BuiltinFloatingPointType;
+	slang_internal typealias numeric = __BuiltinArithmeticType;
 
-	slang_public typealias b32 = int32_t;
-	slang_public typealias CString = NativeString;
+	slang_internal typealias b32 = int32_t;
+	slang_internal typealias CString = NativeString;
 }
 #endif
 
 namespace dyslang {
-    slang_public typealias i32 = int32_t;
-    slang_public typealias i64 = int64_t;
-    slang_public typealias u32 = uint32_t;
-    slang_public typealias u64 = uint64_t;
+    slang_internal typealias i32 = int32_t;
+    slang_internal typealias i64 = int64_t;
+    slang_internal typealias u32 = uint32_t;
+    slang_internal typealias u64 = uint64_t;
 
-    slang_public typealias f32 = float;
-    slang_public typealias f64 = double;
+    slang_internal typealias f32 = float;
+    slang_internal typealias f64 = double;
 
-    generic(gtvar(numeric, T)) slang_public typealias v2 = vector<T, 2>;
-    generic(gtvar(numeric, T)) slang_public typealias v3 = vector<T, 3>;
-    generic(gtvar(numeric, T)) slang_public typealias v4 = vector<T, 4>;
+    generic(gtvar(numeric, T)) slang_internal typealias v2 = vector<T, 2>;
+    generic(gtvar(numeric, T)) slang_internal typealias v3 = vector<T, 3>;
+    generic(gtvar(numeric, T)) slang_internal typealias v4 = vector<T, 4>;
 
-    slang_public typealias b32v2 = v2<int32_t>;
-    slang_public typealias b32v3 = v3<int32_t>;
-    slang_public typealias b32v4 = v4<int32_t>;
+    slang_internal typealias b32v2 = v2<int32_t>;
+    slang_internal typealias b32v3 = v3<int32_t>;
+    slang_internal typealias b32v4 = v4<int32_t>;
 
-    slang_public typealias i32v2 = v2<int32_t>;
-    slang_public typealias i32v3 = v3<int32_t>;
-    slang_public typealias i32v4 = v4<int32_t>;
+    slang_internal typealias i32v2 = v2<int32_t>;
+    slang_internal typealias i32v3 = v3<int32_t>;
+    slang_internal typealias i32v4 = v4<int32_t>;
 
-    slang_public typealias u32v2 = v2<uint32_t>;
-    slang_public typealias u32v3 = v3<uint32_t>;
-    slang_public typealias u32v4 = v4<uint32_t>;
+    slang_internal typealias u32v2 = v2<uint32_t>;
+    slang_internal typealias u32v3 = v3<uint32_t>;
+    slang_internal typealias u32v4 = v4<uint32_t>;
 
-    slang_public typealias f32v2 = v2<float>;
-    slang_public typealias f32v3 = v3<float>;
-    slang_public typealias f32v4 = v4<float>;
+    slang_internal typealias f32v2 = v2<float>;
+    slang_internal typealias f32v3 = v3<float>;
+    slang_internal typealias f32v4 = v4<float>;
 
-    slang_public typealias f64v2 = v2<double>;
-    slang_public typealias f64v3 = v3<double>;
-    slang_public typealias f64v4 = v4<double>;
+    slang_internal typealias f64v2 = v2<double>;
+    slang_internal typealias f64v3 = v3<double>;
+    slang_internal typealias f64v4 = v4<double>;
 
-    generic(gtvar(numeric, T)) slang_public typealias m2x2 = matrix<T, 2, 2>;
-    generic(gtvar(numeric, T)) slang_public typealias m3x3 = matrix<T, 3, 3>;
-    generic(gtvar(numeric, T)) slang_public typealias m4x4 = matrix<T, 4, 4>;
+    generic(gtvar(numeric, T)) slang_internal typealias m2x2 = matrix<T, 2, 2>;
+    generic(gtvar(numeric, T)) slang_internal typealias m3x3 = matrix<T, 3, 3>;
+    generic(gtvar(numeric, T)) slang_internal typealias m4x4 = matrix<T, 4, 4>;
 
-    slang_public typealias f32m2x2 = m2x2<float>;
-    slang_public typealias f32m3x3 = m3x3<float>;
-    slang_public typealias f32m4x4 = m4x4<float>;
+    slang_internal typealias f32m2x2 = m2x2<float>;
+    slang_internal typealias f32m3x3 = m3x3<float>;
+    slang_internal typealias f32m4x4 = m4x4<float>;
 
-    slang_public typealias f64m2x2 = m2x2<double>;
-    slang_public typealias f64m3x3 = m3x3<double>;
-    slang_public typealias f64m4x4 = m4x4<double>;
+    slang_internal typealias f64m2x2 = m2x2<double>;
+    slang_internal typealias f64m3x3 = m3x3<double>;
+    slang_internal typealias f64m4x4 = m4x4<double>;
 
     generic(gvar(First), gvar(Second)) struct Pair
     {
@@ -379,7 +384,7 @@ namespace dyslang {
 [[vk::binding(0, 0)]] Texture2D __global_texture_array[100];
 #endif
 // Host should set index for GPU texture array
-struct Texture2DRef
+slang_internal struct Texture2DRef
 {
 #ifdef __cplusplus
     void* _tex;
@@ -392,7 +397,8 @@ struct Texture2DRef
 
 namespace dyslang
 {
-    interfaceUUID(
+    slangInterfaceUUID(
+        internal,
         IProperties,
         UUID(A,2,F,5,4,8,6,6, 7,A,E,F, 4,9,0,5, B,4,C,E, 4,7, A,C, 7,3, C,A, 3,C, 0,7)
     )
@@ -413,7 +419,7 @@ namespace dyslang
 #ifdef __SLANG_CPP__
 
 namespace __private {
-    T get<T>(CString key, IProperties properties) {
+    T get<T>(dyslang::CString key, dyslang::IProperties properties) {
         __requirePrelude(R"(
                 #include <type_traits>
                 #include <stdexcept>
@@ -443,7 +449,7 @@ namespace __private {
         __intrinsic_asm R"(getProperty<$TR>($0, $1))";
     }
 
-    void set<T>(CString key, T value, IProperties properties) {
+    void set<T>(dyslang::CString key, T value, dyslang::IProperties properties) {
         __requirePrelude(R"(
             template <typename T, typename P> 
             void setProperty(const char* key, const T& value, P& props){
