@@ -381,17 +381,17 @@ namespace dyslang {
 
 
 #ifdef __SLANG__
-[[vk::binding(0, 0)]] Texture2D __global_texture_array[100];
+[[vk::binding(0, 0)]] __DynamicResource<__DynamicResourceKind::General> __global_resource_array[];
 #endif
 // Host should set index for GPU texture array
 slang_internal struct Texture2DRef
 {
 #ifdef __cplusplus
     void* _tex;
-    void* get() { return _tex; }
+    //void* get() { return _tex; }
 #elif __SLANG__
     int _idx;
-    Texture2D get() { return __global_texture_array[_idx]; }
+    //Texture2D get() { return __global_texture_array[_idx]; }
 #endif
 };
 

@@ -4,7 +4,6 @@ add_library(${DYSLANG_LIBRARY} STATIC
     ${DYSLANG_INCLUDE_DIR}/dyslang/plugin.h plugin.cpp 
     # ${DYSLANG_INCLUDE_DIR}/dyslang/properties.h 
     ${DYSLANG_INCLUDE_DIR}/dyslang/platform.h)
-add_library(tamashii::${DYSLANG_LIBRARY} ALIAS ${DYSLANG_LIBRARY})
 
 target_include_directories(${DYSLANG_LIBRARY} PUBLIC "${DYSLANG_INCLUDE_DIR}")
 set_target_properties(${DYSLANG_LIBRARY} PROPERTIES FOLDER ${DYSLANG_FOLDER})
