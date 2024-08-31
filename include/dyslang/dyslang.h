@@ -314,6 +314,21 @@ namespace dyslang {
     using b32 = int32_t;
     using CString = const char*;
     using size_t = std::size_t;
+
+    // our version of the slang Optional
+    template <typename T>
+    struct Optional
+    {
+        Optional() : value{}, hasValue{} {}
+        Optional(std::nullopt_t) : Optional{} {}
+        Optional(const T& v) : value{ v }, hasValue{ true } {}
+
+        T value;
+        b32 hasValue;
+
+        Optional& operator=(const T& v) { value = v; hasValue.value = 1; return this; }
+        Optional& operator=(const std::nullopt_t&) { value = {}; hasValue.value = 0; return this; }
+    };
 }
 
 #else
@@ -376,6 +391,25 @@ namespace dyslang {
     {
         First first;
         Second second;
+    };
+
+    generic(gvar(T), gvvar(u32, N)) struct HashMap {
+        u32 bucketIndex(const u32 hash) {
+            return hash % N;
+        }
+
+        Optional<T> get(const u32 hash) {
+            return values[bucketIndex(hash)];
+        }
+
+        mutating b32 insert(const u32 hash, const T value) {
+            let idx = bucketIndex(hash);
+            if (values[idx].hasValue) return false;
+            values[idx] = Optional<T>(value);
+            return true;
+        }
+
+        Optional<T> values[N];
     };
 }
 
