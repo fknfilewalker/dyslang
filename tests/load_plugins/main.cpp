@@ -15,6 +15,7 @@ int main(int argc, char* argv[]) {
 
 	// set properties 
     dyslang::Properties props_in;
+    props_in.properties["position"] = dyslang::f64v3{ 10.0f, 10.0f, 10.0f };
     props_in.properties["color"] = dyslang::f64v3{ 3.0f, 4.0, 1000 };
     props_in.properties["intensity"] = 15.0f;
 

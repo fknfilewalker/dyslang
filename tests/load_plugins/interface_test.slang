@@ -8,5 +8,7 @@ RWStructuredBuffer<float> outputBuffer;
 [numthreads(1, 1, 1)]
 void main(uint3 dispatchThreadID: SV_DispatchThreadID)
 {
-    outputBuffer[0] = emitters[0].sample().x;
+    vector<float, 3> P = { 0.0, 0.0, 0.0 };
+    vector<float, 3> N = { 0.0, 1.0, 0.0 };
+    outputBuffer[0] = emitters[0].illuminate(P, N).x;
 }
