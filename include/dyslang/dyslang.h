@@ -436,18 +436,18 @@ namespace dyslang
         IProperties,
         UUID(A,2,F,5,4,8,6,6, 7,A,E,F, 4,9,0,5, B,4,C,E, 4,7, A,C, 7,3, C,A, 3,C, 0,7)
     )
-        vbegin(b32) has_property(CString) vend;
-        vbegin(f64) get_f64(CString) vend;
-        vbegin(f64v2) get_f64v2(CString) vend;
-        vbegin(f64v3) get_f64v3(CString) vend;
-        vbegin(f64v4) get_f64v4(CString) vend;
+        vbegin(dyslang::b32) has_property(dyslang::CString) vend;
+        vbegin(dyslang::f64) get_f64(dyslang::CString) vend;
+        vbegin(dyslang::f64v2) get_f64v2(dyslang::CString) vend;
+        vbegin(dyslang::f64v3) get_f64v3(dyslang::CString) vend;
+        vbegin(dyslang::f64v4) get_f64v4(dyslang::CString) vend;
 
-        vbegin(Texture2DRef) get_texture(CString) vend;
+        vbegin(Texture2DRef) get_texture(dyslang::CString) vend;
 
-        vbegin(void) set(CString, f64) vend;
-        vbegin(void) set(CString, f64v2) vend;
-        vbegin(void) set(CString, f64v3) vend;
-        vbegin(void) set(CString, f64v4) vend;
+        vbegin(void) set(dyslang::CString, dyslang::f64) vend;
+        vbegin(void) set(dyslang::CString, dyslang::f64v2) vend;
+        vbegin(void) set(dyslang::CString, dyslang::f64v3) vend;
+        vbegin(void) set(dyslang::CString, dyslang::f64v4) vend;
 	};
 
 #ifdef __SLANG_CPP__
@@ -503,8 +503,8 @@ namespace __private {
 #ifdef __SLANG__
 
 struct Properties {
-    IProperties __properties;
-    bool has(CString key) {
+    dyslang::IProperties __properties;
+    bool has(dyslang::CString key) {
 #ifdef __SLANG_CPP__
         return (bool)__properties.has_property(key);
 #else
@@ -512,7 +512,7 @@ struct Properties {
 #endif
     }
 
-    T get<T>(CString key) {
+    T get<T>(dyslang::CString key) {
 #ifdef __SLANG_CPP__
         return __private::get<T>(key, __properties);
 #else
@@ -520,7 +520,7 @@ struct Properties {
 #endif
     }
 
-    void set<T>(CString key, T value) {
+    void set<T>(dyslang::CString key, T value) {
 #ifdef __SLANG_CPP__
         __private::set<T>(key, value, __properties);
 #endif
@@ -541,18 +541,18 @@ struct Properties {
         vbegin(uint32_t) release() SLANG_OVERRIDE { return 1; }
 
         // Properties
-        vbegin(b32) has_property(const char* key) SLANG_OVERRIDE { return properties.contains(key); }
-        vbegin(f64) get_f64(const char* key) SLANG_OVERRIDE { return find<f64>(key); }
-        vbegin(f64v2) get_f64v2(const char* key) SLANG_OVERRIDE { return find<f64v2>(key); }
-        vbegin(f64v3) get_f64v3(const char* key) SLANG_OVERRIDE { return find<f64v3>(key); }
-        vbegin(f64v4) get_f64v4(const char* key) SLANG_OVERRIDE { return find<f64v4>(key); }
+        vbegin(dyslang::b32) has_property(const char* key) SLANG_OVERRIDE { return properties.contains(key); }
+        vbegin(dyslang::f64) get_f64(const char* key) SLANG_OVERRIDE { return find<dyslang::f64>(key); }
+        vbegin(dyslang::f64v2) get_f64v2(const char* key) SLANG_OVERRIDE { return find<dyslang::f64v2>(key); }
+        vbegin(dyslang::f64v3) get_f64v3(const char* key) SLANG_OVERRIDE { return find<dyslang::f64v3>(key); }
+        vbegin(dyslang::f64v4) get_f64v4(const char* key) SLANG_OVERRIDE { return find<dyslang::f64v4>(key); }
 
-        vbegin(Texture2DRef) get_texture(CString) SLANG_OVERRIDE { return {}; }
+        vbegin(Texture2DRef) get_texture(dyslang::CString) SLANG_OVERRIDE { return {}; }
 
-        vbegin(void) set(const char* key, f64 value) SLANG_OVERRIDE { properties[key] = value; }
-        vbegin(void) set(const char* key, f64v2 value) SLANG_OVERRIDE { properties[key] = value; }
-        vbegin(void) set(const char* key, f64v3 value) SLANG_OVERRIDE { properties[key] = value; }
-        vbegin(void) set(const char* key, f64v4 value) SLANG_OVERRIDE { properties[key] = value; }
+        vbegin(void) set(const char* key, dyslang::f64 value) SLANG_OVERRIDE { properties[key] = value; }
+        vbegin(void) set(const char* key, dyslang::f64v2 value) SLANG_OVERRIDE { properties[key] = value; }
+        vbegin(void) set(const char* key, dyslang::f64v3 value) SLANG_OVERRIDE { properties[key] = value; }
+        vbegin(void) set(const char* key, dyslang::f64v4 value) SLANG_OVERRIDE { properties[key] = value; }
 
         template <typename T>
         T find(const char* key) {
