@@ -20,7 +20,6 @@ endif()
 # PROJECT
 project(dyslang DESCRIPTION "dyslang" LANGUAGES CXX C)
 
-set(DYSLANG_PLUGIN_COMPILER dyslang_plugin_compiler)
 set(DYSLANG_LIBRARY dyslang)
 
 set(DYSLANG_FOLDER "dyslang")

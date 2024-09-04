@@ -1,21 +1,21 @@
 set(SOURCES "main.cpp")
 
 if(WIN32)
-   add_executable(${DYSLANG_PLUGIN_COMPILER} WIN32 ${SOURCES})
+   add_executable(dyslang_plugin_compiler WIN32 ${SOURCES})
 
-   add_custom_command(TARGET ${DYSLANG_PLUGIN_COMPILER} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:${DYSLANG_PLUGIN_COMPILER}> $<TARGET_RUNTIME_DLLS:${DYSLANG_PLUGIN_COMPILER}>
+   add_custom_command(TARGET dyslang_plugin_compiler POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:dyslang_plugin_compiler> $<TARGET_RUNTIME_DLLS:dyslang_plugin_compiler>
       COMMAND_EXPAND_LISTS
    )
 elseif(APPLE)
-   add_executable(${DYSLANG_PLUGIN_COMPILER} MACOSX_BUNDLE ${SOURCES})
+   add_executable(dyslang_plugin_compiler MACOSX_BUNDLE ${SOURCES})
 elseif(UNIX)
-   add_executable(${DYSLANG_PLUGIN_COMPILER} ${SOURCES})
+   add_executable(dyslang_plugin_compiler ${SOURCES})
 endif()
 
-set_target_properties(${DYSLANG_PLUGIN_COMPILER} PROPERTIES FOLDER ${DYSLANG_FOLDER})
-target_link_libraries(${DYSLANG_PLUGIN_COMPILER} PRIVATE slang::slang)
-add_dependencies(${DYSLANG_PLUGIN_COMPILER} slang::slang)
+set_target_properties(dyslang_plugin_compiler PROPERTIES FOLDER ${DYSLANG_FOLDER})
+target_link_libraries(dyslang_plugin_compiler PRIVATE slang::slang)
+add_dependencies(dyslang_plugin_compiler slang::slang)
 
 define_property(GLOBAL PROPERTY DYSLANG_PLUGIN_LIST
    BRIEF_DOCS "Global list of plugins"
@@ -35,11 +35,11 @@ function(dyslang_add_plugin FILEPATH VARIANTS)
    # set(SLANG_MODULE_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}.slang-module")
    
    add_custom_command(OUTPUT ${DYNAMIC_LIB_OUTPUT} #${SLANG_MODULE_OUTPUT}
-                     COMMAND ${DYSLANG_PLUGIN_COMPILER} ARGS ${INPUT_SLANG_FILE} "${_VARIANTS}"
-                     MAIN_DEPENDENCY ${INPUT_SLANG_FILE}
-                     DEPENDS ${DYSLANG_PLUGIN_COMPILER}
-                     COMMENT "Generating ${FILENAME} plugin"
-                     VERBATIM)
+      COMMAND dyslang_plugin_compiler ARGS ${INPUT_SLANG_FILE} "${_VARIANTS}"
+      MAIN_DEPENDENCY ${INPUT_SLANG_FILE}
+      DEPENDS dyslang_plugin_compiler
+      COMMENT "Generating ${FILENAME} plugin"
+      VERBATIM)
    add_custom_target(${FILENAME} ALL DEPENDS ${DYNAMIC_LIB_OUTPUT}) #${SLANG_MODULE_OUTPUT})
    # set_target_properties(${FILENAME} PROPERTIES FOLDER "${DYSLANG_PLUGIN_FOLDER}/${DIR}")
 
