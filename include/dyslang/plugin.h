@@ -34,7 +34,7 @@ namespace dyslang
     {
         explicit Plugin(std::string_view lib_path);
 
-        template <typename T>
+        template <typename T = void>
         std::unique_ptr<Object<T>> create(Properties& props, const char* variant) {
             auto obj = std::make_unique<Object<T>>(*this, variant);
             f_create_object(&props, variant, obj->data.get_data_ptr());
