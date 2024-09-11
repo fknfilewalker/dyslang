@@ -415,7 +415,8 @@ namespace dyslang {
 
 
 #ifdef __SLANG__
-[[vk::binding(0, 0)]] __DynamicResource<__DynamicResourceKind::General> __global_resource_array[];
+//[[vk::binding(0, 0)]]
+__DynamicResource<__DynamicResourceKind::General> __global_resource_array[];
 #endif
 // Host should set index for GPU texture array
 slang_internal struct Texture2DRef

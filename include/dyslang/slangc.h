@@ -21,6 +21,7 @@ namespace dyslang {
 		void addModule(std::string_view module_name, std::string_view module_path, const void* blob) const;
 		void addEntryPoint(const std::string_view module_name, const std::string_view entryPointName) const;
 		void finalizeModulesAndEntryPoints() const;
+		std::pair<unsigned, unsigned> globalResourceArrayBinding() const;
 		void addTypeConformance(const std::string_view conformance_type, const std::string_view interface_type, int64_t id_override = -1) const;
 		Hash compose() const;
 

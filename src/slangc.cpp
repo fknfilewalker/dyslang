@@ -131,6 +131,27 @@ void Slangc::finalizeModulesAndEntryPoints() const
     _p->_tempProgram = tempProgram;
 }
 
+std::pair<unsigned, unsigned> Slangc::globalResourceArrayBinding() const
+{
+	auto layout = _p->_tempProgram->getLayout(0, _p->_diagnosticsBlob.writeRef());
+	checkError(_p->_diagnosticsBlob);
+    if (!layout) throw std::runtime_error("slang: layout null");
+    unsigned parameterCount = layout->getParameterCount();
+    for (unsigned pp = 0; pp < parameterCount; pp++)
+    {
+        slang::VariableLayoutReflection* parameter = layout->getParameterByIndex(pp);
+		const std::string name = parameter->getName();
+        if (name == "__global_resource_array")
+        {
+            unsigned binding = parameter->getBindingIndex();
+            unsigned space = parameter->getBindingSpace();
+            return { binding, space };
+        }
+        int x = 2;
+    }
+    throw std::runtime_error("slang: __global_resource_array not found");
+}
+
 void Slangc::addTypeConformance(const std::string_view type, const std::string_view conformance, int64_t id_override) const
 {
     slang::ProgramLayout* layout = _p->_tempProgram->getLayout();

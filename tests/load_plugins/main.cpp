@@ -38,6 +38,8 @@ int main(int argc, char* argv[]) {
     slangc.addModule(light->implementation_name, light->implementation_name, plugin.slang_module_blob());
     slangc.addEntryPoint(moduleName, "main");
     slangc.finalizeModulesAndEntryPoints();
+	auto bindings = slangc.globalResourceArrayBinding();
+	std::cout << "Global Resource Array: Binding: " << bindings.first << ", Set: " << bindings.second << '\n';
     slangc.addTypeConformance(light->interface_name, light->implementation_name);
     dyslang::Slangc::Hash hash = slangc.compose();
     std::vector<uint8_t> output = slangc.compile();
