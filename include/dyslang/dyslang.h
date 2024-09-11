@@ -294,11 +294,11 @@ namespace dyslang {
 
     template <typename T> concept integral = std::integral<T>;
     template <typename T> concept floating_point = std::floating_point<T>;
-    template <typename T> concept numeric = std::integral<T> || std::floating_point<T>;
-    template <typename T> inline constexpr bool is_numeric_v = std::is_floating_point_v<T> || std::is_integral_v<T>;
+	template <typename T> concept arithmetic = std::integral<T> || std::floating_point<T>;
+    template <typename T> inline constexpr bool is_arithmetic_v = std::is_floating_point_v<T> || std::is_integral_v<T>;
 
-    template <numeric T, uint64_t N> using vector = std::array<T, N>;//glm::vec<N, T>;
-    template <numeric T, uint64_t M, uint64_t N> using matrix = std::array<std::array<T, N>, M>;//glm::mat<M, N, T>;
+    template <arithmetic T, uint64_t N> using vector = std::array<T, N>;//glm::vec<N, T>;
+    template <arithmetic T, uint64_t M, uint64_t N> using matrix = std::array<std::array<T, N>, M>;//glm::mat<M, N, T>;
 
     inline constexpr auto none = std::nullopt;
 
@@ -326,8 +326,8 @@ namespace dyslang {
         T value;
         b32 hasValue;
 
-        Optional& operator=(const T& v) { value = v; hasValue.value = 1; return this; }
-        Optional& operator=(const std::nullopt_t&) { value = {}; hasValue.value = 0; return this; }
+        Optional& operator=(const T& v) { value = v; hasValue = 1; return *this; }
+        Optional& operator=(const std::nullopt_t&) { value = {}; hasValue = 0; return *this; }
     };
 }
 
@@ -335,7 +335,7 @@ namespace dyslang {
 namespace dyslang {
 	slang_internal typealias integral = __BuiltinIntegerType;
 	slang_internal typealias floating_point = __BuiltinFloatingPointType;
-	slang_internal typealias numeric = __BuiltinArithmeticType;
+	slang_internal typealias arithmetic = __BuiltinArithmeticType;
 
 	slang_internal typealias b32 = int32_t;
 	slang_internal typealias CString = NativeString;
@@ -343,7 +343,7 @@ namespace dyslang {
 #endif
 
 namespace dyslang {
-    slang_internal typealias i32 = int32_t;
+    slang_internal typealias i32 = int;
     slang_internal typealias i64 = int64_t;
     slang_internal typealias u32 = uint32_t;
     slang_internal typealias u64 = uint64_t;
@@ -351,9 +351,9 @@ namespace dyslang {
     slang_internal typealias f32 = float;
     slang_internal typealias f64 = double;
 
-    generic(gtvar(numeric, T)) slang_internal typealias v2 = vector<T, 2>;
-    generic(gtvar(numeric, T)) slang_internal typealias v3 = vector<T, 3>;
-    generic(gtvar(numeric, T)) slang_internal typealias v4 = vector<T, 4>;
+    generic(gtvar(arithmetic, T)) slang_internal typealias v2 = vector<T, 2>;
+    generic(gtvar(arithmetic, T)) slang_internal typealias v3 = vector<T, 3>;
+    generic(gtvar(arithmetic, T)) slang_internal typealias v4 = vector<T, 4>;
 
     slang_internal typealias b32v2 = v2<int32_t>;
     slang_internal typealias b32v3 = v3<int32_t>;
@@ -375,9 +375,9 @@ namespace dyslang {
     slang_internal typealias f64v3 = v3<double>;
     slang_internal typealias f64v4 = v4<double>;
 
-    generic(gtvar(numeric, T)) slang_internal typealias m2x2 = matrix<T, 2, 2>;
-    generic(gtvar(numeric, T)) slang_internal typealias m3x3 = matrix<T, 3, 3>;
-    generic(gtvar(numeric, T)) slang_internal typealias m4x4 = matrix<T, 4, 4>;
+    generic(gtvar(arithmetic, T)) slang_internal typealias m2x2 = matrix<T, 2, 2>;
+    generic(gtvar(arithmetic, T)) slang_internal typealias m3x3 = matrix<T, 3, 3>;
+    generic(gtvar(arithmetic, T)) slang_internal typealias m4x4 = matrix<T, 4, 4>;
 
     slang_internal typealias f32m2x2 = m2x2<float>;
     slang_internal typealias f32m3x3 = m3x3<float>;
@@ -419,19 +419,20 @@ namespace dyslang {
 __DynamicResource<__DynamicResourceKind::General> __global_resource_array[];
 #endif
 // Host should set index for GPU texture array
-slang_internal struct Texture2DRef
-{
-#ifdef __cplusplus
-    void* _tex;
-    //void* get() { return _tex; }
-#elif __SLANG__
-    int _idx;
-    //Texture2D get() { return __global_texture_array[_idx]; }
-#endif
-};
 
 namespace dyslang
 {
+	generic(gtvar(arithmetic, T)) slang_internal struct Texture2DRef
+	{
+        dyslang::i32 _idx;
+		bool has() { return _idx >= 0; }
+	#ifdef __cplusplus
+	    void* get() { return nullptr; }
+	#elif __SLANG__
+	    Texture2D<T> get() { return Texture2D<T>(__global_resource_array[_idx]); }
+	#endif
+	};
+
     slangInterfaceUUID(
         internal,
         IProperties,
@@ -443,7 +444,7 @@ namespace dyslang
         vbegin(dyslang::f64v3) get_f64v3(dyslang::CString) vend;
         vbegin(dyslang::f64v4) get_f64v4(dyslang::CString) vend;
 
-        vbegin(Texture2DRef) get_texture(dyslang::CString) vend;
+        vbegin(dyslang::i32) get_texture(dyslang::CString) vend;
 
         vbegin(void) set(dyslang::CString, dyslang::f64) vend;
         vbegin(void) set(dyslang::CString, dyslang::f64v2) vend;
@@ -526,6 +527,14 @@ struct Properties {
         __private::set<T>(key, value, __properties);
 #endif
     }
+
+    dyslang::Texture2DRef<T> getTexture2D<T : __BuiltinArithmeticType>(dyslang::CString key) {
+#ifdef __SLANG_CPP__
+        return { -1 };
+#else
+        return {};
+#endif
+    }
 };
 
 #elif __cplusplus
@@ -548,7 +557,7 @@ struct Properties {
         vbegin(dyslang::f64v3) get_f64v3(const char* key) SLANG_OVERRIDE { return find<dyslang::f64v3>(key); }
         vbegin(dyslang::f64v4) get_f64v4(const char* key) SLANG_OVERRIDE { return find<dyslang::f64v4>(key); }
 
-        vbegin(Texture2DRef) get_texture(dyslang::CString) SLANG_OVERRIDE { return {}; }
+        vbegin(dyslang::i32) get_texture(dyslang::CString) SLANG_OVERRIDE { return {}; }
 
         vbegin(void) set(const char* key, dyslang::f64 value) SLANG_OVERRIDE { properties[key] = value; }
         vbegin(void) set(const char* key, dyslang::f64v2 value) SLANG_OVERRIDE { properties[key] = value; }
@@ -575,7 +584,7 @@ struct Properties {
                 result += ": ";
                 std::visit([&result](auto&& arg) {
                     using T = std::decay_t<decltype(arg)>;
-                    if constexpr (is_numeric_v<T>)
+                    if constexpr (is_arithmetic_v<T>)
                         result += std::to_string(arg);
                     else {
 						std::string sep;
