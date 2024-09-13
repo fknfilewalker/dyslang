@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
     props_in.properties["intensity"] = 15.0f;
 
     // create object
-    auto light = plugin.create<void>(props_in, variant);
+    std::unique_ptr<dyslang::Object<void>> light = plugin.create<void>(props_in, variant);
     std::cout << light->to_string() << '\n';
 
     // read back obj data

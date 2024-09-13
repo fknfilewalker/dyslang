@@ -1,7 +1,7 @@
 set(SOURCES "main.cpp")
 
 if(WIN32)
-   add_executable(dyslang_plugin_compiler WIN32 ${SOURCES})
+   add_executable(dyslang_plugin_compiler ${SOURCES})
 
    add_custom_command(TARGET dyslang_plugin_compiler POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:dyslang_plugin_compiler> $<TARGET_RUNTIME_DLLS:dyslang_plugin_compiler>
