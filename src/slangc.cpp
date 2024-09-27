@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <vector>
 #include <unordered_map>
+#include <cstring>
 #include <slang.h>
 #include <slang-com-ptr.h>
 

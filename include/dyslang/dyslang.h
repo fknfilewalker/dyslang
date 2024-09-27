@@ -269,6 +269,7 @@ bool operator!=(dyslang::CString left, dyslang::CString right)
 #include <iostream>
 #include <map>
 #include <string>
+#include <cstring>
 #include <concepts>
 #include <optional>
 #include <array>
