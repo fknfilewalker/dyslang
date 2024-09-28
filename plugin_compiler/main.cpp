@@ -11,6 +11,7 @@ auto sharedLibExt = ".dll";
 #elif __APPLE__
 auto sharedLibExt = ".dylib";
 #else // linux
+#include <cstring>
 auto sharedLibExt = ".so";
 #endif
 

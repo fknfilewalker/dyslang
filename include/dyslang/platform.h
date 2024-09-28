@@ -5,6 +5,8 @@
 #ifdef WIN32
 #include <Shlwapi.h>
 #elif defined( __linux__ )
+#include <linux/limits.h>
+#include <unistd.h>
 #include <dlfcn.h>
 #elif defined(__APPLE__)
 #include <dlfcn.h>
