@@ -423,16 +423,31 @@ __DynamicResource<__DynamicResourceKind::General> __global_resource_array[];
 
 namespace dyslang
 {
-	generic(gtvar(arithmetic, T)) slang_internal struct Texture2DRef
-	{
+#ifdef __cplusplus
+    template <typename T> struct Texture1D { };
+    template <typename T> struct Texture2D { };
+
+	// todo limit to resource types
+    template <typename T>
+    concept resource = !always_false_v<T>;
+#elif __SLANG__
+    slang_internal typealias resource = __IDynamicResourceCastable<__DynamicResourceKind::General>;
+#endif
+
+    generic(gtvar(resource, T)) slang_internal struct ResourceRef
+    {
         dyslang::i32 _idx;
-		bool has() { return _idx >= 0; }
+        bool has() { return _idx >= 0; }
 	#ifdef __cplusplus
-	    void* get() { return nullptr; }
+        T get() { return {}; }
 	#elif __SLANG__
-	    Texture2D<T> get() { return Texture2D<T>(__global_resource_array[_idx]); }
+    	T get() { return __global_resource_array[_idx].as<T>(); }
 	#endif
-	};
+    };
+
+#if __SLANG__
+    generic(gtvar(arithmetic, T)) slang_internal typealias Texture2DRef = dyslang::ResourceRef<Texture2D<T>>;
+#endif
 
     slangInterfaceUUID(
         internal,
@@ -529,12 +544,16 @@ struct Properties {
 #endif
     }
 
-    dyslang::Texture2DRef<T> getTexture2D<T : __BuiltinArithmeticType>(dyslang::CString key) {
+    dyslang::ResourceRef<T> getResourceRef<T : __IDynamicResourceCastable<__DynamicResourceKind::General>>(dyslang::CString key) {
 #ifdef __SLANG_CPP__
         return { -1 };
 #else
         return {};
 #endif
+    }
+
+    dyslang::Texture2DRef<T> getTexture2DRef<T : __BuiltinArithmeticType>(dyslang::CString key) {
+		return getResourceRef<Texture2D<T>>(key);
     }
 };
 

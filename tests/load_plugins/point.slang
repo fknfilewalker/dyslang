@@ -26,7 +26,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         } else intensity = Real(1.0);
 
         if (properties.has("texture")) {
-            texture = properties.getTexture2D<Real>("texture");
+            texture = properties.getTexture2DRef<Real>("texture");
         }
     }
 
@@ -41,7 +41,8 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         vector<Real, 3> dir = position - hit_pos_ws;
         const Real dist = length(dir);
         const Real att = Real(1.0) / (Real(1.0) + dist * dist);
-        return color * intensity * att * max(dot(normal_ws, normalize(dir)), Real(0.0));
+        const vector<Real, 3> emission = no_diff texture.get().Load(int3(0, 0, 0));
+        return color * intensity * att * emission * max(dot(normal_ws, normalize(dir)), Real(0.0));
     }
 
     [[Differentiable]] vector<Real, 3> sample() { return position; }
