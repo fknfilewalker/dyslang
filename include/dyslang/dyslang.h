@@ -452,7 +452,8 @@ namespace dyslang
     };
 
 #if __SLANG__
-    generic(gtvar(arithmetic, T)) slang_internal typealias Texture2DRef = dyslang::ResourceRef<Texture2D<T>>;
+    generic(gvar(T)) slang_internal typealias Texture2DRef = dyslang::ResourceRef<Texture2D<T>>;
+    generic(gvar(T)) slang_internal typealias Sampler2DRef = dyslang::ResourceRef<Sampler2D<T>>;
 #endif
 
     slangInterfaceUUID(
@@ -563,9 +564,8 @@ struct Properties {
 #endif
     }
 
-    dyslang::Texture2DRef<T> getTexture2DRef<T : __BuiltinArithmeticType>(dyslang::CString key) {
-		return getResourceRef<Texture2D<T>>(key);
-    }
+    dyslang::Texture2DRef<T> getTexture2DRef<T>(dyslang::CString key) { return getResourceRef<Texture2D<T>>(key); }
+	dyslang::Sampler2DRef<T> getSampler2DRef<T>(dyslang::CString key) { return getResourceRef<Sampler2D<T>>(key); }
 
     void setResourceRef<T : __IDynamicResourceCastable<__DynamicResourceKind::General>>(dyslang::CString key, dyslang::ResourceRef<T> value) {
 #ifdef __SLANG_CPP__

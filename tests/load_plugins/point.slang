@@ -6,7 +6,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
     Real range;
     vector<Real, 3> color;
     Real intensity;
-    dyslang::Texture2DRef<Real> texture;
+    dyslang::Texture2DRef<vector<Real, 3>> texture;
 
     __init(dyslang::Properties properties) {
         if (properties.has("position")) {
@@ -26,7 +26,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         } else intensity = Real(1.0);
 
         if (properties.has("texture")) {
-            texture = properties.getTexture2DRef<Real>("texture");
+            texture = properties.getTexture2DRef<vector<Real, 3>>("texture");
         }
     }
 
