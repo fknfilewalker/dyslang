@@ -345,8 +345,8 @@ namespace dyslang {
 
 namespace dyslang {
     slang_internal typealias i32 = int;
-    slang_internal typealias i64 = int64_t;
     slang_internal typealias u32 = uint32_t;
+    slang_internal typealias i64 = int64_t;
     slang_internal typealias u64 = uint64_t;
 
     slang_internal typealias f32 = float;
@@ -367,6 +367,14 @@ namespace dyslang {
     slang_internal typealias u32v2 = v2<uint32_t>;
     slang_internal typealias u32v3 = v3<uint32_t>;
     slang_internal typealias u32v4 = v4<uint32_t>;
+
+    slang_internal typealias i64v2 = v2<int64_t>;
+    slang_internal typealias i64v3 = v3<int64_t>;
+    slang_internal typealias i64v4 = v4<int64_t>;
+
+    slang_internal typealias u64v2 = v2<uint64_t>;
+    slang_internal typealias u64v3 = v3<uint64_t>;
+    slang_internal typealias u64v4 = v4<uint64_t>;
 
     slang_internal typealias f32v2 = v2<float>;
     slang_internal typealias f32v3 = v3<float>;
@@ -474,6 +482,16 @@ namespace dyslang
         vbegin(void) set(dyslang::CString, dyslang::f64v2) vend;
         vbegin(void) set(dyslang::CString, dyslang::f64v3) vend;
         vbegin(void) set(dyslang::CString, dyslang::f64v4) vend;
+
+        vbegin(void) set(dyslang::CString, dyslang::i64) vend;
+        vbegin(void) set(dyslang::CString, dyslang::i64v2) vend;
+        vbegin(void) set(dyslang::CString, dyslang::i64v3) vend;
+        vbegin(void) set(dyslang::CString, dyslang::i64v4) vend;
+
+        vbegin(void) set(dyslang::CString, dyslang::u64) vend;
+        vbegin(void) set(dyslang::CString, dyslang::u64v2) vend;
+        vbegin(void) set(dyslang::CString, dyslang::u64v3) vend;
+        vbegin(void) set(dyslang::CString, dyslang::u64v4) vend;
 	};
 
 #ifdef __SLANG_CPP__
@@ -579,6 +597,8 @@ struct Properties {
     {
         using SupportedTypes = std::tuple<
             b32, b32v2, b32v3, b32v4,
+            i64, i64v2, i64v3, i64v4,
+            u64, u64v2, u64v3, u64v4,
             f64, f64v2, f64v3, f64v4,
 			dyslang::ResourceRefBase
         >;
@@ -602,6 +622,16 @@ struct Properties {
         vbegin(void) set(const dyslang::CString key, dyslang::f64v2 value) SLANG_OVERRIDE { properties[key] = value; }
         vbegin(void) set(const dyslang::CString key, dyslang::f64v3 value) SLANG_OVERRIDE { properties[key] = value; }
         vbegin(void) set(const dyslang::CString key, dyslang::f64v4 value) SLANG_OVERRIDE { properties[key] = value; }
+
+        vbegin(void) set(const dyslang::CString key, dyslang::i64 value) SLANG_OVERRIDE { properties[key] = value; }
+        vbegin(void) set(const dyslang::CString key, dyslang::i64v2 value) SLANG_OVERRIDE { properties[key] = value; }
+        vbegin(void) set(const dyslang::CString key, dyslang::i64v3 value) SLANG_OVERRIDE { properties[key] = value; }
+        vbegin(void) set(const dyslang::CString key, dyslang::i64v4 value) SLANG_OVERRIDE { properties[key] = value; }
+
+        vbegin(void) set(const dyslang::CString key, dyslang::u64 value) SLANG_OVERRIDE { properties[key] = value; }
+        vbegin(void) set(const dyslang::CString key, dyslang::u64v2 value) SLANG_OVERRIDE { properties[key] = value; }
+        vbegin(void) set(const dyslang::CString key, dyslang::u64v3 value) SLANG_OVERRIDE { properties[key] = value; }
+        vbegin(void) set(const dyslang::CString key, dyslang::u64v4 value) SLANG_OVERRIDE { properties[key] = value; }
 
         template <typename T>
         T find(const char* key) {
