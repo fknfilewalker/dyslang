@@ -18,6 +18,8 @@ int main(int argc, char* argv[]) {
     props_in.properties["position"] = dyslang::f64v3{ 10.0f, 10.0f, 10.0f };
     props_in.properties["color"] = dyslang::f64v3{ 3.0f, 4.0, 1000 };
     props_in.properties["intensity"] = 15.0f;
+    props_in.properties["texture"] = dyslang::ResourceRef{ 1 };
+    std::cout << "IN:" << props_in.to_string() << '\n';
 
     // create object
     std::unique_ptr<dyslang::Object<void>> light = plugin.create<void>(props_in, variant);
@@ -26,7 +28,7 @@ int main(int argc, char* argv[]) {
     // read back obj data
     dyslang::Properties props_out;
     light->traverse(props_out);
-    std::cout << props_out.to_string() << '\n';
+    std::cout << "OUT:" << props_out.to_string() << '\n';
 
     std::vector<const char*> includes;
     std::vector<dyslang::Slangc::ArgPair> defines;
@@ -39,7 +41,7 @@ int main(int argc, char* argv[]) {
     slangc.addEntryPoint(moduleName, "main");
     slangc.finalizeModulesAndEntryPoints();
 	auto bindings = slangc.globalResourceArrayBinding();
-	std::cout << "Global Resource Array: Binding: " << bindings.first << ", Set: " << bindings.second << '\n';
+	std::cout << "Global Resource Array: Binding: " << bindings.first << ", Set: " << bindings.second << "\n\n";
     slangc.addTypeConformance(light->interface_name, light->implementation_name);
     dyslang::Slangc::Hash hash = slangc.compose();
     std::vector<uint8_t> output = slangc.compile();

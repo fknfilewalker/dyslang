@@ -97,7 +97,7 @@ namespace dyslang
         }
 
         [[nodiscard]] std::string to_string() const {
-            return "Object:\n Interface: " + interface_name + "\n Implementation: " + implementation_name + "\n Variant: " + variant + "\n VTable Size: " + std::to_string(data.get_virtual_table_size()) + " Bytes\n Data Size: " + std::to_string(data.get_data_size()) + " Bytes\n Total Size: " + std::to_string(data.get_size()) + " Bytes";
+            return "Object:\n Interface: " + interface_name + "\n Implementation: " + implementation_name + "\n Variant: " + variant + "\n VTable Size: " + std::to_string(data.get_virtual_table_size()) + " Bytes\n Data Size: " + std::to_string(data.get_data_size()) + " Bytes\n Total Size: " + std::to_string(data.get_size()) + " Bytes\n";
         }
 
         Plugin& plugin;

@@ -434,15 +434,21 @@ namespace dyslang
     slang_internal typealias resource = __IDynamicResourceCastable<__DynamicResourceKind::General>;
 #endif
 
-    generic(gtvar(resource, T)) slang_internal struct ResourceRef
-    {
+    struct ResourceRefBase {
         dyslang::i32 _idx;
         bool has() { return _idx >= 0; }
-	#ifdef __cplusplus
-        T get() { return {}; }
-	#elif __SLANG__
+    };
+#ifdef __cplusplus
+    struct ResourceRef : ResourceRefBase
+#elif __SLANG__
+    generic(gtvar(resource, T)) slang_internal struct ResourceRef : ResourceRefBase
+#endif
+    {
+#ifdef __cplusplus
+        dyslang::i32 get() { return _idx; }
+#elif __SLANG__
     	T get() { return __global_resource_array[_idx].as<T>(); }
-	#endif
+#endif
     };
 
 #if __SLANG__
@@ -460,7 +466,8 @@ namespace dyslang
         vbegin(dyslang::f64v3) get_f64v3(dyslang::CString) vend;
         vbegin(dyslang::f64v4) get_f64v4(dyslang::CString) vend;
 
-        vbegin(dyslang::i32) get_texture(dyslang::CString) vend;
+        vbegin(dyslang::ResourceRefBase) get_resource_ref(dyslang::CString) vend;
+        vbegin(void) set_resource_ref(dyslang::CString, dyslang::ResourceRefBase) vend;
 
         vbegin(void) set(dyslang::CString, dyslang::f64) vend;
         vbegin(void) set(dyslang::CString, dyslang::f64v2) vend;
@@ -495,6 +502,9 @@ namespace __private {
                         else if constexpr (vector_info<T>::size == 4) return static_cast<T>(props->get_f64v4(key));
                         else return {};
                     }
+					else if constexpr (std::is_base_of_v<dyslang_ResourceRefBase_0, T>) {
+	                    return props->get_resource_ref(key);
+	                }
                     throw std::runtime_error("Unsupported type");
                 }
             )");
@@ -509,7 +519,8 @@ namespace __private {
                     return props->set(key, static_cast<double>(value));
                 } else if constexpr (is_vector<T>::value) {
                     return props->set(key, Vector<double, vector_info<T>::size>(value));
-                    throw std::runtime_error("Unsupported type");
+                } else if constexpr (std::is_same_v<dyslang_ResourceRefBase_0, T>) {
+                    return props->set_resource_ref(key, value);
                 }
                 throw std::runtime_error("Unsupported type");
             }
@@ -546,7 +557,7 @@ struct Properties {
 
     dyslang::ResourceRef<T> getResourceRef<T : __IDynamicResourceCastable<__DynamicResourceKind::General>>(dyslang::CString key) {
 #ifdef __SLANG_CPP__
-        return { -1 };
+        return dyslang::ResourceRef<T>( __private::get<dyslang::ResourceRefBase>(key, __properties)._idx );
 #else
         return {};
 #endif
@@ -555,6 +566,12 @@ struct Properties {
     dyslang::Texture2DRef<T> getTexture2DRef<T : __BuiltinArithmeticType>(dyslang::CString key) {
 		return getResourceRef<Texture2D<T>>(key);
     }
+
+    void setResourceRef<T : __IDynamicResourceCastable<__DynamicResourceKind::General>>(dyslang::CString key, dyslang::ResourceRef<T> value) {
+#ifdef __SLANG_CPP__
+        __private::set<dyslang::ResourceRefBase>(key, value, __properties);
+#endif
+    }
 };
 
 #elif __cplusplus
@@ -562,7 +579,8 @@ struct Properties {
     {
         using SupportedTypes = std::tuple<
             b32, b32v2, b32v3, b32v4,
-            f64, f64v2, f64v3, f64v4
+            f64, f64v2, f64v3, f64v4,
+			dyslang::ResourceRefBase
         >;
         using VariantType = tuple_to_variant<SupportedTypes>::type;
         // We don't need queryInterface for this impl, or ref counting
@@ -571,18 +589,19 @@ struct Properties {
         vbegin(uint32_t) release() SLANG_OVERRIDE { return 1; }
 
         // Properties
-        vbegin(dyslang::b32) has_property(const char* key) SLANG_OVERRIDE { return properties.contains(key); }
-        vbegin(dyslang::f64) get_f64(const char* key) SLANG_OVERRIDE { return find<dyslang::f64>(key); }
-        vbegin(dyslang::f64v2) get_f64v2(const char* key) SLANG_OVERRIDE { return find<dyslang::f64v2>(key); }
-        vbegin(dyslang::f64v3) get_f64v3(const char* key) SLANG_OVERRIDE { return find<dyslang::f64v3>(key); }
-        vbegin(dyslang::f64v4) get_f64v4(const char* key) SLANG_OVERRIDE { return find<dyslang::f64v4>(key); }
+        vbegin(dyslang::b32) has_property(const dyslang::CString key) SLANG_OVERRIDE { return properties.contains(key); }
+        vbegin(dyslang::f64) get_f64(const dyslang::CString key) SLANG_OVERRIDE { return find<dyslang::f64>(key); }
+        vbegin(dyslang::f64v2) get_f64v2(const dyslang::CString key) SLANG_OVERRIDE { return find<dyslang::f64v2>(key); }
+        vbegin(dyslang::f64v3) get_f64v3(const dyslang::CString key) SLANG_OVERRIDE { return find<dyslang::f64v3>(key); }
+        vbegin(dyslang::f64v4) get_f64v4(const dyslang::CString key) SLANG_OVERRIDE { return find<dyslang::f64v4>(key); }
 
-        vbegin(dyslang::i32) get_texture(dyslang::CString) SLANG_OVERRIDE { return {}; }
+        vbegin(dyslang::ResourceRefBase) get_resource_ref(const dyslang::CString key) SLANG_OVERRIDE { return find<dyslang::ResourceRefBase>(key); }
+        vbegin(void) set_resource_ref(const dyslang::CString key, dyslang::ResourceRefBase value) SLANG_OVERRIDE { properties[key] = value; }
 
-        vbegin(void) set(const char* key, dyslang::f64 value) SLANG_OVERRIDE { properties[key] = value; }
-        vbegin(void) set(const char* key, dyslang::f64v2 value) SLANG_OVERRIDE { properties[key] = value; }
-        vbegin(void) set(const char* key, dyslang::f64v3 value) SLANG_OVERRIDE { properties[key] = value; }
-        vbegin(void) set(const char* key, dyslang::f64v4 value) SLANG_OVERRIDE { properties[key] = value; }
+        vbegin(void) set(const dyslang::CString key, dyslang::f64 value) SLANG_OVERRIDE { properties[key] = value; }
+        vbegin(void) set(const dyslang::CString key, dyslang::f64v2 value) SLANG_OVERRIDE { properties[key] = value; }
+        vbegin(void) set(const dyslang::CString key, dyslang::f64v3 value) SLANG_OVERRIDE { properties[key] = value; }
+        vbegin(void) set(const dyslang::CString key, dyslang::f64v4 value) SLANG_OVERRIDE { properties[key] = value; }
 
         template <typename T>
         T find(const char* key) {
@@ -606,6 +625,8 @@ struct Properties {
                     using T = std::decay_t<decltype(arg)>;
                     if constexpr (is_arithmetic_v<T>)
                         result += std::to_string(arg);
+                    else if constexpr (std::is_base_of_v<dyslang::ResourceRefBase, T>)
+                        result += "ResourceRef{ index=" + std::to_string(arg._idx) + " }";
                     else {
 						std::string sep;
                         for(const auto& v : arg) {

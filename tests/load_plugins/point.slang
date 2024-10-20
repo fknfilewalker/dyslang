@@ -35,6 +35,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         properties.set("range", range);
         properties.set("color", color);
         properties.set("intensity", intensity);
+        properties.setResourceRef("texture", texture);
     }
 
     [[Differentiable]] vector<Real, 3> illuminate(vector<Real, 3> hit_pos_ws, vector<Real, 3> normal_ws) {
