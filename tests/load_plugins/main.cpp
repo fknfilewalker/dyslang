@@ -8,6 +8,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Working Dir: " << path << '\n';
 
     const char* variant = "float_rgb";
+    using Real = float;
 
     // load plugin
     dyslang::Plugin plugin{ "plugins/point" };
@@ -15,10 +16,10 @@ int main(int argc, char* argv[]) {
 
 	// set properties 
     dyslang::Properties props_in;
-    props_in.properties["position"] = dyslang::f64v3{ 10.0f, 10.0f, 10.0f };
-    props_in.properties["color"] = dyslang::f64v3{ 3.0f, 4.0, 1000 };
-    props_in.properties["intensity"] = 15.0f;
-    props_in.properties["texture"] = dyslang::ResourceRef{ 1 };
+    props_in.set("position", dyslang::vector<Real,3>{ 10.0f, 10.0f, 13.0f });
+    props_in.set("color", dyslang::vector<Real, 3>{ 3.0f, 4.0, 1000 });
+    props_in.set("intensity", Real(15.0f));
+    props_in.set("texture", dyslang::ResourceRef{ 1 });
     std::cout << "IN:" << props_in.to_string() << '\n';
 
     // create object

@@ -36,6 +36,8 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         properties.set("color", color);
         properties.set("intensity", intensity);
         properties.setResourceRef("texture", texture);
+        Real arr[10] = { Real(1.0), Real(2.0), Real(3.0), Real(4.0), Real(5.0), Real(6.0), Real(7.0), Real(8.0), Real(9.0), Real(10.0) };
+        properties.set("arr_test", arr);
     }
 
     [[Differentiable]] vector<Real, 3> illuminate(vector<Real, 3> hit_pos_ws, vector<Real, 3> normal_ws) {

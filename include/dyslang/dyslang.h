@@ -470,28 +470,13 @@ namespace dyslang
         UUID(A,2,F,5,4,8,6,6, 7,A,E,F, 4,9,0,5, B,4,C,E, 4,7, A,C, 7,3, C,A, 3,C, 0,7)
     )
         vbegin(dyslang::b32) has_property(dyslang::CString) vend;
-        vbegin(dyslang::f64) get_f64(dyslang::CString) vend;
-        vbegin(dyslang::f64v2) get_f64v2(dyslang::CString) vend;
-        vbegin(dyslang::f64v3) get_f64v3(dyslang::CString) vend;
-        vbegin(dyslang::f64v4) get_f64v4(dyslang::CString) vend;
+		vbegin(void) get(dyslang::CString, dyslang::f32**, uint64_t*) vend;
+        vbegin(void) get(dyslang::CString, dyslang::f64**, uint64_t*) vend;
+        vbegin(void) get(dyslang::CString, dyslang::ResourceRefBase**, uint64_t*) vend;
 
-        vbegin(dyslang::ResourceRefBase) get_resource_ref(dyslang::CString) vend;
-        vbegin(void) set_resource_ref(dyslang::CString, dyslang::ResourceRefBase) vend;
-
-        vbegin(void) set(dyslang::CString, dyslang::f64) vend;
-        vbegin(void) set(dyslang::CString, dyslang::f64v2) vend;
-        vbegin(void) set(dyslang::CString, dyslang::f64v3) vend;
-        vbegin(void) set(dyslang::CString, dyslang::f64v4) vend;
-
-        vbegin(void) set(dyslang::CString, dyslang::i64) vend;
-        vbegin(void) set(dyslang::CString, dyslang::i64v2) vend;
-        vbegin(void) set(dyslang::CString, dyslang::i64v3) vend;
-        vbegin(void) set(dyslang::CString, dyslang::i64v4) vend;
-
-        vbegin(void) set(dyslang::CString, dyslang::u64) vend;
-        vbegin(void) set(dyslang::CString, dyslang::u64v2) vend;
-        vbegin(void) set(dyslang::CString, dyslang::u64v3) vend;
-        vbegin(void) set(dyslang::CString, dyslang::u64v4) vend;
+        vbegin(void) set(dyslang::CString, const dyslang::f32*, uint64_t) vend;
+        vbegin(void) set(dyslang::CString, const dyslang::f64*, uint64_t) vend;
+        vbegin(void) set(dyslang::CString, const dyslang::ResourceRefBase*, uint64_t) vend;
 	};
 
 #ifdef __SLANG_CPP__
@@ -510,38 +495,47 @@ namespace __private {
                     using type = T;
                     static constexpr size_t size = N;
                 };
+				
+				template <typename T, typename PROPERTIES_T, typename RESOURCE_T> 
+                void getProperty(const char* key, T** value, PROPERTIES_T& props, RESOURCE_T){
+					size_t count;
+					props->get(key, value, &count);
+				}
+				template <typename T, size_t N, typename PROPERTIES_T, typename RESOURCE_T> 
+                void getProperty(const char* key, Vector<T, N>** value, PROPERTIES_T& props, RESOURCE_T){			
+					size_t count;
+					props->get(key, (T**)value, &count);
+				}
+				template <typename T, size_t N, typename PROPERTIES_T, typename RESOURCE_T> 
+                void getProperty(const char* key, FixedArray<T, N>** value, PROPERTIES_T& props, RESOURCE_T){			
+					size_t count;
+					props->get(key, (T**)value, &count);
+				}
 
-                template <typename T, typename PROPERTIES_T, typename RESOURCE_T> 
-                T getProperty(const char* key, PROPERTIES_T& props, RESOURCE_T){
-                    if constexpr (std::is_floating_point_v<T>) {
-                        return static_cast<T>(props->get_f64(key));
-                    } else if constexpr (is_vector<T>::value) {
-                        if constexpr (vector_info<T>::size == 2) return static_cast<T>(props->get_f64v2(key));   
-                        else if constexpr (vector_info<T>::size == 3) return static_cast<T>(props->get_f64v3(key));
-                        else if constexpr (vector_info<T>::size == 4) return static_cast<T>(props->get_f64v4(key));
-                        else return {};
-                    }
-					else if constexpr (std::is_same_v<T, RESOURCE_T>) {
-	                    return props->get_resource_ref(key);
-	                }
-                    throw std::runtime_error("Unsupported type");
-                }
+				template <typename T, typename PROPERTIES_T, typename RESOURCE_T> 
+                T getPropertyProxy(const char* key, PROPERTIES_T& props, RESOURCE_T r){
+                    T value;
+					T* ptr = &value;
+					getProperty(key, &ptr, props, r);
+					return *ptr;
+				}
             )");
-        __intrinsic_asm R"(getProperty<$TR>($0, $1, $2))";
+        __intrinsic_asm R"(getPropertyProxy<$TR>($0, $1, $2))";
     }
 
     void set<T, RESOURCE_T>(dyslang::CString key, T value, dyslang::IProperties properties, RESOURCE_T = {}) {
         __requirePrelude(R"(
-            template <typename T, typename PROPERTIES_T, typename RESOURCE_T> 
-            void setProperty(const char* key, const T& value, PROPERTIES_T& props, RESOURCE_T){
-                if constexpr (std::is_floating_point_v<T>) {
-                    return props->set(key, static_cast<double>(value));
-                } else if constexpr (is_vector<T>::value) {
-                    return props->set(key, Vector<double, vector_info<T>::size>(value));
-                } else if constexpr (std::is_same_v<T, RESOURCE_T>) {
-                    return props->set_resource_ref(key, value);
-                }
-                throw std::runtime_error("Unsupported type");
+			template <typename T, typename PROPERTIES_T, typename RESOURCE_T> 
+            void setProperty(const char* key, T& value, PROPERTIES_T& props, RESOURCE_T){
+                props->set(key, &value, 1);
+            }
+			template <typename T, size_t N, typename PROPERTIES_T, typename RESOURCE_T> 
+            void setProperty(const char* key, Vector<T, N>& value, PROPERTIES_T& props, RESOURCE_T){
+                props->set(key, (T*)&value, N);
+            }
+            template <typename T, size_t N, typename PROPERTIES_T, typename RESOURCE_T> 
+            void setProperty(const char* key, FixedArray<T, N>& value, PROPERTIES_T& props, RESOURCE_T){
+                props->set(key, (T*)&value, N);
             }
         )");
         __intrinsic_asm R"(setProperty($0, $1, $2, $3))";
@@ -596,11 +590,9 @@ struct Properties {
     struct Properties : public IProperties
     {
         using SupportedTypes = std::tuple<
-            b32, b32v2, b32v3, b32v4,
-            i64, i64v2, i64v3, i64v4,
-            u64, u64v2, u64v3, u64v4,
-            f64, f64v2, f64v3, f64v4,
-			dyslang::ResourceRefBase
+            std::vector<f32>,
+            std::vector<f64>,
+            std::vector<dyslang::ResourceRefBase>
         >;
         using VariantType = tuple_to_variant<SupportedTypes>::type;
         // We don't need queryInterface for this impl, or ref counting
@@ -610,30 +602,32 @@ struct Properties {
 
         // Properties
         vbegin(dyslang::b32) has_property(const dyslang::CString key) SLANG_OVERRIDE { return properties.contains(key); }
-        vbegin(dyslang::f64) get_f64(const dyslang::CString key) SLANG_OVERRIDE { return find<dyslang::f64>(key); }
-        vbegin(dyslang::f64v2) get_f64v2(const dyslang::CString key) SLANG_OVERRIDE { return find<dyslang::f64v2>(key); }
-        vbegin(dyslang::f64v3) get_f64v3(const dyslang::CString key) SLANG_OVERRIDE { return find<dyslang::f64v3>(key); }
-        vbegin(dyslang::f64v4) get_f64v4(const dyslang::CString key) SLANG_OVERRIDE { return find<dyslang::f64v4>(key); }
+        vbegin(void) get(const dyslang::CString key, dyslang::f32** ptr, uint64_t* count) SLANG_OVERRIDE {
+            auto& value = std::get<std::vector<dyslang::f32>>(properties[key]);
+            *count = value.size();
+            *ptr = value.data();
+        }
+    	vbegin(void) get(const dyslang::CString key, dyslang::f64** ptr, uint64_t* count) SLANG_OVERRIDE {
+            auto& value = std::get<std::vector<dyslang::f64>>(properties[key]);
+			*count = value.size();
+			*ptr = value.data();
+        }
+        vbegin(void) get(const dyslang::CString key, dyslang::ResourceRefBase** ptr, uint64_t* count) SLANG_OVERRIDE {
+            auto& value = std::get<std::vector<dyslang::ResourceRefBase>>(properties[key]);
+            *count = value.size();
+            *ptr = value.data();
+        }
 
-        vbegin(dyslang::ResourceRefBase) get_resource_ref(const dyslang::CString key) SLANG_OVERRIDE { return find<dyslang::ResourceRefBase>(key); }
-        vbegin(void) set_resource_ref(const dyslang::CString key, dyslang::ResourceRefBase value) SLANG_OVERRIDE { properties[key] = value; }
+    
+        vbegin(void) set(const dyslang::CString key, const dyslang::f32* ptr, const uint64_t count) SLANG_OVERRIDE { properties[key] = std::vector<dyslang::f32>{ ptr, ptr + count }; }
+        vbegin(void) set(const dyslang::CString key, const dyslang::f64* ptr, const uint64_t count) SLANG_OVERRIDE { properties[key] = std::vector<dyslang::f64>{ ptr, ptr + count }; }
+        vbegin(void) set(const dyslang::CString key, const dyslang::ResourceRefBase* ptr, const uint64_t count) SLANG_OVERRIDE { properties[key] = std::vector<dyslang::ResourceRefBase>{ ptr, ptr + count }; }
 
-        vbegin(void) set(const dyslang::CString key, dyslang::f64 value) SLANG_OVERRIDE { properties[key] = value; }
-        vbegin(void) set(const dyslang::CString key, dyslang::f64v2 value) SLANG_OVERRIDE { properties[key] = value; }
-        vbegin(void) set(const dyslang::CString key, dyslang::f64v3 value) SLANG_OVERRIDE { properties[key] = value; }
-        vbegin(void) set(const dyslang::CString key, dyslang::f64v4 value) SLANG_OVERRIDE { properties[key] = value; }
+        template <typename T> void set(const dyslang::CString key, const T& data) { set(key, &data, 1); }
+    	template <typename T> void set(const dyslang::CString key, const std::vector<T>& data) { set(key, data.data(), data.size()); }
+        template <typename T, size_t N> void set(const dyslang::CString key, const std::array<T, N>& data) { set(key, data.data(), N); }
 
-        vbegin(void) set(const dyslang::CString key, dyslang::i64 value) SLANG_OVERRIDE { properties[key] = value; }
-        vbegin(void) set(const dyslang::CString key, dyslang::i64v2 value) SLANG_OVERRIDE { properties[key] = value; }
-        vbegin(void) set(const dyslang::CString key, dyslang::i64v3 value) SLANG_OVERRIDE { properties[key] = value; }
-        vbegin(void) set(const dyslang::CString key, dyslang::i64v4 value) SLANG_OVERRIDE { properties[key] = value; }
-
-        vbegin(void) set(const dyslang::CString key, dyslang::u64 value) SLANG_OVERRIDE { properties[key] = value; }
-        vbegin(void) set(const dyslang::CString key, dyslang::u64v2 value) SLANG_OVERRIDE { properties[key] = value; }
-        vbegin(void) set(const dyslang::CString key, dyslang::u64v3 value) SLANG_OVERRIDE { properties[key] = value; }
-        vbegin(void) set(const dyslang::CString key, dyslang::u64v4 value) SLANG_OVERRIDE { properties[key] = value; }
-
-        template <typename T>
+        /*template <typename T>
         T find(const char* key) {
             if(properties.contains(key)) {
                 try {
@@ -643,7 +637,7 @@ struct Properties {
                 }
             }
             return T{};
-        }
+        }*/
 
         [[nodiscard]] std::string to_string() const {
             std::string result = "Properties:\n";
@@ -655,15 +649,19 @@ struct Properties {
                     using T = std::decay_t<decltype(arg)>;
                     if constexpr (is_arithmetic_v<T>)
                         result += std::to_string(arg);
-                    else if constexpr (std::is_base_of_v<dyslang::ResourceRefBase, T>)
-                        result += "ResourceRef{ index=" + std::to_string(arg._idx) + " }";
+                    else if constexpr (std::is_same_v<std::vector<dyslang::ResourceRefBase>, T>) {
+                        std::string sep;
+                        for (const auto& v : arg) {
+                            result += sep + "ResourceRef{ index=" + std::to_string(v._idx) + " }";
+                            sep = ", ";
+                        }
+                    }
                     else {
 						std::string sep;
                         for(const auto& v : arg) {
 							result += sep + std::to_string(v);
                             sep = ", ";
 						}
-                        //result += glm::gtx::to_string(arg);
                     }
                 }, value);
                 result += "\n";
