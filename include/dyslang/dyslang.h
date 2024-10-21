@@ -312,7 +312,7 @@ namespace dyslang {
     //    b32(const bool v) : value{ v ? 1 : 0 } {}
     //    operator bool() const { return value > 0; }
     //};
-    using b32 = int32_t;
+    using b32 = uint32_t;
     using CString = const char*;
     using size_t = std::size_t;
 
@@ -338,7 +338,7 @@ namespace dyslang {
 	slang_internal typealias floating_point = __BuiltinFloatingPointType;
 	slang_internal typealias arithmetic = __BuiltinArithmeticType;
 
-	slang_internal typealias b32 = int32_t;
+	slang_internal typealias b32 = uint32_t;
 	slang_internal typealias CString = NativeString;
 }
 #endif
@@ -356,9 +356,9 @@ namespace dyslang {
     generic(gtvar(arithmetic, T)) slang_internal typealias v3 = vector<T, 3>;
     generic(gtvar(arithmetic, T)) slang_internal typealias v4 = vector<T, 4>;
 
-    slang_internal typealias b32v2 = v2<int32_t>;
-    slang_internal typealias b32v3 = v3<int32_t>;
-    slang_internal typealias b32v4 = v4<int32_t>;
+    slang_internal typealias b32v2 = v2<uint32_t>;
+    slang_internal typealias b32v3 = v3<uint32_t>;
+    slang_internal typealias b32v4 = v4<uint32_t>;
 
     slang_internal typealias i32v2 = v2<int32_t>;
     slang_internal typealias i32v3 = v3<int32_t>;
