@@ -497,7 +497,7 @@ namespace dyslang
 #ifdef __SLANG_CPP__
 
 namespace __private {
-    T get<T>(dyslang::CString key, dyslang::IProperties properties) {
+    T get<T, AUX>(dyslang::CString key, dyslang::IProperties properties, AUX = {}) {
         __requirePrelude(R"(
                 #include <type_traits>
                 #include <stdexcept>
@@ -511,8 +511,8 @@ namespace __private {
                     static constexpr size_t size = N;
                 };
 
-                template <typename T, typename P> 
-                T getProperty(const char* key, P& props){
+                template <typename T, typename P, typename AUX = void> 
+                T getProperty(const char* key, P& props, AUX){
                     if constexpr (std::is_floating_point_v<T>) {
                         return static_cast<T>(props->get_f64(key));
                     } else if constexpr (is_vector<T>::value) {
@@ -521,30 +521,30 @@ namespace __private {
                         else if constexpr (vector_info<T>::size == 4) return static_cast<T>(props->get_f64v4(key));
                         else return {};
                     }
-					else if constexpr (std::is_base_of_v<dyslang_ResourceRefBase_0, T>) {
+					else if constexpr (std::is_same_v<T, AUX>) {
 	                    return props->get_resource_ref(key);
 	                }
                     throw std::runtime_error("Unsupported type");
                 }
             )");
-        __intrinsic_asm R"(getProperty<$TR>($0, $1))";
+        __intrinsic_asm R"(getProperty<$TR>($0, $1, $2))";
     }
 
-    void set<T>(dyslang::CString key, T value, dyslang::IProperties properties) {
+    void set<T, AUX>(dyslang::CString key, T value, dyslang::IProperties properties, AUX = {}) {
         __requirePrelude(R"(
-            template <typename T, typename P> 
-            void setProperty(const char* key, const T& value, P& props){
+            template <typename T, typename P, typename AUX = void> 
+            void setProperty(const char* key, const T& value, P& props, AUX){
                 if constexpr (std::is_floating_point_v<T>) {
                     return props->set(key, static_cast<double>(value));
                 } else if constexpr (is_vector<T>::value) {
                     return props->set(key, Vector<double, vector_info<T>::size>(value));
-                } else if constexpr (std::is_same_v<dyslang_ResourceRefBase_0, T>) {
+                } else if constexpr (std::is_same_v<T, AUX>) {
                     return props->set_resource_ref(key, value);
                 }
                 throw std::runtime_error("Unsupported type");
             }
         )");
-        __intrinsic_asm R"(setProperty($0, $1, $2))";
+        __intrinsic_asm R"(setProperty($0, $1, $2, $3))";
     }
 }
 #endif
@@ -562,7 +562,7 @@ struct Properties {
 
     T get<T>(dyslang::CString key) {
 #ifdef __SLANG_CPP__
-        return __private::get<T>(key, __properties);
+        return __private::get<T, bool>(key, __properties);
 #else
         return {};
 #endif
@@ -570,13 +570,13 @@ struct Properties {
 
     void set<T>(dyslang::CString key, T value) {
 #ifdef __SLANG_CPP__
-        __private::set<T>(key, value, __properties);
+        __private::set<T, bool>(key, value, __properties);
 #endif
     }
 
     dyslang::ResourceRef<T> getResourceRef<T : __IDynamicResourceCastable<__DynamicResourceKind::General>>(dyslang::CString key) {
 #ifdef __SLANG_CPP__
-        return dyslang::ResourceRef<T>( __private::get<dyslang::ResourceRefBase>(key, __properties)._idx );
+        return dyslang::ResourceRef<T>( __private::get<dyslang::ResourceRefBase, dyslang::ResourceRefBase>(key, __properties)._idx );
 #else
         return {};
 #endif
@@ -587,7 +587,7 @@ struct Properties {
 
     void setResourceRef<T : __IDynamicResourceCastable<__DynamicResourceKind::General>>(dyslang::CString key, dyslang::ResourceRef<T> value) {
 #ifdef __SLANG_CPP__
-        __private::set<dyslang::ResourceRefBase>(key, value, __properties);
+        __private::set<dyslang::ResourceRefBase, dyslang::ResourceRefBase>(key, value, __properties);
 #endif
     }
 };
