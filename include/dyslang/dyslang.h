@@ -497,7 +497,7 @@ namespace dyslang
 #ifdef __SLANG_CPP__
 
 namespace __private {
-    T get<T, AUX>(dyslang::CString key, dyslang::IProperties properties, AUX = {}) {
+    T get<T, RESOURCE_T>(dyslang::CString key, dyslang::IProperties properties, RESOURCE_T = {}) {
         __requirePrelude(R"(
                 #include <type_traits>
                 #include <stdexcept>
@@ -511,8 +511,8 @@ namespace __private {
                     static constexpr size_t size = N;
                 };
 
-                template <typename T, typename P, typename AUX = void> 
-                T getProperty(const char* key, P& props, AUX){
+                template <typename T, typename PROPERTIES_T, typename RESOURCE_T> 
+                T getProperty(const char* key, PROPERTIES_T& props, RESOURCE_T){
                     if constexpr (std::is_floating_point_v<T>) {
                         return static_cast<T>(props->get_f64(key));
                     } else if constexpr (is_vector<T>::value) {
@@ -521,7 +521,7 @@ namespace __private {
                         else if constexpr (vector_info<T>::size == 4) return static_cast<T>(props->get_f64v4(key));
                         else return {};
                     }
-					else if constexpr (std::is_same_v<T, AUX>) {
+					else if constexpr (std::is_same_v<T, RESOURCE_T>) {
 	                    return props->get_resource_ref(key);
 	                }
                     throw std::runtime_error("Unsupported type");
@@ -530,15 +530,15 @@ namespace __private {
         __intrinsic_asm R"(getProperty<$TR>($0, $1, $2))";
     }
 
-    void set<T, AUX>(dyslang::CString key, T value, dyslang::IProperties properties, AUX = {}) {
+    void set<T, RESOURCE_T>(dyslang::CString key, T value, dyslang::IProperties properties, RESOURCE_T = {}) {
         __requirePrelude(R"(
-            template <typename T, typename P, typename AUX = void> 
-            void setProperty(const char* key, const T& value, P& props, AUX){
+            template <typename T, typename PROPERTIES_T, typename RESOURCE_T> 
+            void setProperty(const char* key, const T& value, PROPERTIES_T& props, RESOURCE_T){
                 if constexpr (std::is_floating_point_v<T>) {
                     return props->set(key, static_cast<double>(value));
                 } else if constexpr (is_vector<T>::value) {
                     return props->set(key, Vector<double, vector_info<T>::size>(value));
-                } else if constexpr (std::is_same_v<T, AUX>) {
+                } else if constexpr (std::is_same_v<T, RESOURCE_T>) {
                     return props->set_resource_ref(key, value);
                 }
                 throw std::runtime_error("Unsupported type");
@@ -562,7 +562,7 @@ struct Properties {
 
     T get<T>(dyslang::CString key) {
 #ifdef __SLANG_CPP__
-        return __private::get<T, bool>(key, __properties);
+        return __private::get<T, dyslang::ResourceRefBase>(key, __properties);
 #else
         return {};
 #endif
@@ -570,7 +570,7 @@ struct Properties {
 
     void set<T>(dyslang::CString key, T value) {
 #ifdef __SLANG_CPP__
-        __private::set<T, bool>(key, value, __properties);
+        __private::set<T, dyslang::ResourceRefBase>(key, value, __properties);
 #endif
     }
 
