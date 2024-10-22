@@ -498,17 +498,12 @@ namespace __private {
 				
 				template <typename T, typename PROPERTIES_T, typename RESOURCE_T> 
                 void getProperty(const char* key, T** value, PROPERTIES_T& props, RESOURCE_T){
-					size_t count;
+					uint64_t count;
 					props->get(key, value, &count);
 				}
-				template <typename T, size_t N, typename PROPERTIES_T, typename RESOURCE_T> 
+				template <typename T, int N, typename PROPERTIES_T, typename RESOURCE_T> 
                 void getProperty(const char* key, Vector<T, N>** value, PROPERTIES_T& props, RESOURCE_T){			
-					size_t count;
-					props->get(key, (T**)value, &count);
-				}
-				template <typename T, size_t N, typename PROPERTIES_T, typename RESOURCE_T> 
-                void getProperty(const char* key, FixedArray<T, N>** value, PROPERTIES_T& props, RESOURCE_T){			
-					size_t count;
+					uint64_t count;
 					props->get(key, (T**)value, &count);
 				}
 
@@ -529,7 +524,7 @@ namespace __private {
             void setProperty(const char* key, T& value, PROPERTIES_T& props, RESOURCE_T){
                 props->set(key, &value, 1);
             }
-			template <typename T, size_t N, typename PROPERTIES_T, typename RESOURCE_T> 
+			template <typename T, int N, typename PROPERTIES_T, typename RESOURCE_T>
             void setProperty(const char* key, Vector<T, N>& value, PROPERTIES_T& props, RESOURCE_T){
                 props->set(key, (T*)&value, N);
             }
