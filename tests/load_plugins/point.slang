@@ -40,7 +40,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         properties.set("arr_test", arr);
     }
 
-    [[Differentiable]] vector<Real, 3> illuminate(vector<Real, 3> hit_pos_ws, vector<Real, 3> normal_ws) {
+    [Differentiable] vector<Real, 3> illuminate(vector<Real, 3> hit_pos_ws, vector<Real, 3> normal_ws) {
         vector<Real, 3> dir = position - hit_pos_ws;
         const Real dist = length(dir);
         const Real att = Real(1.0) / (Real(1.0) + dist * dist);
@@ -48,7 +48,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         return color * intensity * att * emission * max(dot(normal_ws, normalize(dir)), Real(0.0));
     }
 
-    [[Differentiable]] vector<Real, 3> sample() { return position; }
+    [Differentiable] vector<Real, 3> sample() { return position; }
 };
 
 IMPLEMENT_PLUGIN(IEmitter, PointLight)
