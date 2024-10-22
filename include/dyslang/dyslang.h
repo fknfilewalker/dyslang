@@ -486,6 +486,7 @@ namespace __private {
         __requirePrelude(R"(
                 #include <type_traits>
                 #include <stdexcept>
+				#include <iostream>
 
                 template <typename T> struct is_vector : std::false_type {};
                 template <typename T, size_t N> struct is_vector<Vector<T, N>> : std::true_type {};
@@ -498,20 +499,21 @@ namespace __private {
 				
 				template <typename T, typename PROPERTIES_T> 
                 void getProperty(const char* key, T** value, PROPERTIES_T& props){
-                    
 					uint64_t count;
 					props->get(key, value, &count);
+                    if (count != 1) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
 				}
 				template <typename T, int N, typename PROPERTIES_T> 
                 void getProperty(const char* key, Vector<T, N>** value, PROPERTIES_T& props){	
-                    	
 					uint64_t count;
 					props->get(key, (T**)value, &count);
+                    if (count != N) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
 				}
 				template <typename T, size_t N, typename PROPERTIES_T> 
                 void getProperty(const char* key, FixedArray<T, N>** value, PROPERTIES_T& props){	
 					uint64_t count;
 					props->get(key, (T**)value, &count);
+                    if (count != N) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
 				}	
             )");
         __intrinsic_asm R"(getProperty($0, $1, $2))";
