@@ -508,7 +508,7 @@ namespace __private {
 					uint64_t count;
 					props->get(key, (T**)value, &count);
 				}
-				template <typename T, int N, typename PROPERTIES_T> 
+				template <typename T, size_t N, typename PROPERTIES_T> 
                 void getProperty(const char* key, FixedArray<T, N>** value, PROPERTIES_T& props){	
 					uint64_t count;
 					props->get(key, (T**)value, &count);
