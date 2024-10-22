@@ -482,7 +482,7 @@ namespace dyslang
 #ifdef __SLANG_CPP__
 
 namespace __private {
-    T get<T, RESOURCE_T>(dyslang::CString key, dyslang::IProperties properties, RESOURCE_T = {}) {
+    void get<T>(dyslang::CString key, T** value, dyslang::IProperties properties) {
         __requirePrelude(R"(
                 #include <type_traits>
                 #include <stdexcept>
@@ -496,44 +496,39 @@ namespace __private {
                     static constexpr size_t size = N;
                 };
 				
-				template <typename T, typename PROPERTIES_T, typename RESOURCE_T> 
-                void getProperty(const char* key, T** value, PROPERTIES_T& props, RESOURCE_T){
+				template <typename T, typename PROPERTIES_T> 
+                void getProperty(const char* key, T** value, PROPERTIES_T& props){
+                    
 					uint64_t count;
 					props->get(key, value, &count);
 				}
-				template <typename T, int N, typename PROPERTIES_T, typename RESOURCE_T> 
-                void getProperty(const char* key, Vector<T, N>** value, PROPERTIES_T& props, RESOURCE_T){			
+				template <typename T, int N, typename PROPERTIES_T> 
+                void getProperty(const char* key, Vector<T, N>** value, PROPERTIES_T& props){	
+                    	
 					uint64_t count;
 					props->get(key, (T**)value, &count);
 				}
-
-				template <typename T, typename PROPERTIES_T, typename RESOURCE_T> 
-                T getPropertyProxy(const char* key, PROPERTIES_T& props, RESOURCE_T r){
-                    T value;
-					T* ptr = &value;
-					getProperty(key, &ptr, props, r);
-					return *ptr;
-				}
+			
             )");
-        __intrinsic_asm R"(getPropertyProxy<$TR>($0, $1, $2))";
+        __intrinsic_asm R"(getProperty($0, $1, $2))";
     }
 
-    void set<T, RESOURCE_T>(dyslang::CString key, T value, dyslang::IProperties properties, RESOURCE_T = {}) {
+    void set<T>(dyslang::CString key, T value, dyslang::IProperties properties) {
         __requirePrelude(R"(
-			template <typename T, typename PROPERTIES_T, typename RESOURCE_T> 
-            void setProperty(const char* key, T& value, PROPERTIES_T& props, RESOURCE_T){
+			template <typename T, typename PROPERTIES_T> 
+            void setProperty(const char* key, T& value, PROPERTIES_T& props){
                 props->set(key, &value, 1);
             }
-			template <typename T, int N, typename PROPERTIES_T, typename RESOURCE_T>
-            void setProperty(const char* key, Vector<T, N>& value, PROPERTIES_T& props, RESOURCE_T){
+			template <typename T, int N, typename PROPERTIES_T>
+            void setProperty(const char* key, Vector<T, N>& value, PROPERTIES_T& props){
                 props->set(key, (T*)&value, N);
             }
-            template <typename T, size_t N, typename PROPERTIES_T, typename RESOURCE_T> 
-            void setProperty(const char* key, FixedArray<T, N>& value, PROPERTIES_T& props, RESOURCE_T){
+            template <typename T, size_t N, typename PROPERTIES_T> 
+            void setProperty(const char* key, FixedArray<T, N>& value, PROPERTIES_T& props){
                 props->set(key, (T*)&value, N);
             }
         )");
-        __intrinsic_asm R"(setProperty($0, $1, $2, $3))";
+        __intrinsic_asm R"(setProperty($0, $1, $2))";
     }
 }
 #endif
@@ -551,7 +546,9 @@ struct Properties {
 
     T get<T>(dyslang::CString key) {
 #ifdef __SLANG_CPP__
-        return __private::get<T, dyslang::ResourceRefBase>(key, __properties);
+        T* ptr = nullptr;
+        __private::get<T>(key, &ptr, __properties);
+        return *ptr;
 #else
         return {};
 #endif
@@ -559,24 +556,25 @@ struct Properties {
 
     void set<T>(dyslang::CString key, T value) {
 #ifdef __SLANG_CPP__
-        __private::set<T, dyslang::ResourceRefBase>(key, value, __properties);
+        __private::set<T>(key, value, __properties);
 #endif
     }
 
     dyslang::ResourceRef<T> getResourceRef<T : __IDynamicResourceCastable<__DynamicResourceKind::General>>(dyslang::CString key) {
 #ifdef __SLANG_CPP__
-        return dyslang::ResourceRef<T>( __private::get<dyslang::ResourceRefBase, dyslang::ResourceRefBase>(key, __properties)._idx );
+        dyslang::ResourceRefBase* ptr = nullptr;
+        __private::get<dyslang::ResourceRefBase>(key, &ptr, __properties);
+        return dyslang::ResourceRef<T>( ptr->_idx );
 #else
         return {};
 #endif
     }
-
     dyslang::Texture2DRef<T> getTexture2DRef<T>(dyslang::CString key) { return getResourceRef<Texture2D<T>>(key); }
 	dyslang::Sampler2DRef<T> getSampler2DRef<T>(dyslang::CString key) { return getResourceRef<Sampler2D<T>>(key); }
 
     void setResourceRef<T : __IDynamicResourceCastable<__DynamicResourceKind::General>>(dyslang::CString key, dyslang::ResourceRef<T> value) {
 #ifdef __SLANG_CPP__
-        __private::set<dyslang::ResourceRefBase, dyslang::ResourceRefBase>(key, value, __properties);
+        __private::set<dyslang::ResourceRefBase>(key, value, __properties);
 #endif
     }
 };
