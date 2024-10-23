@@ -538,7 +538,7 @@ namespace __private {
 #ifdef __SLANG__
 
 struct Properties {
-    dyslang::IProperties __properties;
+    private dyslang::IProperties __properties;
     bool has(dyslang::CString key) {
 #ifdef __SLANG_CPP__
         return (bool)__properties.has_property(key);
