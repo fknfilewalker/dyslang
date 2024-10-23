@@ -16,6 +16,7 @@ int main(int argc, char* argv[]) {
 
 	// set properties 
     dyslang::Properties props_in;
+	props_in.set("id", 777LL);
     props_in.set("position", dyslang::v3<Real>{ 10.0f, 10.0f, 13.0f });
     props_in.set("color", dyslang::v3<Real>{ 3.0f, 4.0, 1000 });
     props_in.set("intensity", Real(15.0f));

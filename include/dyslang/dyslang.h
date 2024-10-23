@@ -471,13 +471,26 @@ namespace dyslang
         UUID(A,2,F,5,4,8,6,6, 7,A,E,F, 4,9,0,5, B,4,C,E, 4,7, A,C, 7,3, C,A, 3,C, 0,7)
     )
         vbegin(dyslang::b32) has_property(dyslang::CString) vend;
-		vbegin(void) get(dyslang::CString, dyslang::f32**, uint64_t*) vend;
-        vbegin(void) get(dyslang::CString, dyslang::f64**, uint64_t*) vend;
-        vbegin(void) get(dyslang::CString, dyslang::ResourceRefBase**, uint64_t*) vend;
 
-        vbegin(void) set(dyslang::CString, const dyslang::f32*, uint64_t) vend;
-        vbegin(void) set(dyslang::CString, const dyslang::f64*, uint64_t) vend;
-        vbegin(void) set(dyslang::CString, const dyslang::ResourceRefBase*, uint64_t) vend;
+#define dyslang_properties_get(TYPE) vbegin(void) get(dyslang::CString, TYPE**, uint64_t*) vend;
+        dyslang_properties_get(dyslang::u32)
+        dyslang_properties_get(dyslang::i32)
+        dyslang_properties_get(dyslang::u64)
+        dyslang_properties_get(dyslang::i64)
+        dyslang_properties_get(dyslang::f32)
+        dyslang_properties_get(dyslang::f64)
+        dyslang_properties_get(dyslang::ResourceRefBase)
+#undef dyslang_properties_get
+
+#define dyslang_properties_set(TYPE) vbegin(void) set(dyslang::CString, const TYPE*, uint64_t) vend;
+        dyslang_properties_set(dyslang::u32)
+        dyslang_properties_set(dyslang::i32)
+        dyslang_properties_set(dyslang::u64)
+        dyslang_properties_set(dyslang::i64)
+        dyslang_properties_set(dyslang::f32)
+        dyslang_properties_set(dyslang::f64)
+        dyslang_properties_set(dyslang::ResourceRefBase)
+#undef dyslang_properties_set
 	};
 
 #ifdef __SLANG_CPP__
@@ -598,6 +611,10 @@ struct Properties {
     struct Properties : public IProperties
     {
         using SupportedTypes = std::tuple<
+			std::vector<u32>,
+			std::vector<i32>,
+			std::vector<u64>,
+			std::vector<i64>,
             std::vector<f32>,
             std::vector<f64>,
             std::vector<dyslang::ResourceRefBase>
@@ -610,26 +627,31 @@ struct Properties {
 
         // Properties
         vbegin(dyslang::b32) has_property(const dyslang::CString key) SLANG_OVERRIDE { return properties.contains(key); }
-        vbegin(void) get(const dyslang::CString key, dyslang::f32** ptr, uint64_t* count) SLANG_OVERRIDE {
-            auto& value = std::get<std::vector<dyslang::f32>>(properties[key]);
-            *count = value.size();
-            *ptr = value.data();
-        }
-    	vbegin(void) get(const dyslang::CString key, dyslang::f64** ptr, uint64_t* count) SLANG_OVERRIDE {
-            auto& value = std::get<std::vector<dyslang::f64>>(properties[key]);
-			*count = value.size();
-			*ptr = value.data();
-        }
-        vbegin(void) get(const dyslang::CString key, dyslang::ResourceRefBase** ptr, uint64_t* count) SLANG_OVERRIDE {
-            auto& value = std::get<std::vector<dyslang::ResourceRefBase>>(properties[key]);
-            *count = value.size();
-            *ptr = value.data();
-        }
 
-    
-        vbegin(void) set(const dyslang::CString key, const dyslang::f32* ptr, const uint64_t count) SLANG_OVERRIDE { properties[key] = std::vector<dyslang::f32>{ ptr, ptr + count }; }
-        vbegin(void) set(const dyslang::CString key, const dyslang::f64* ptr, const uint64_t count) SLANG_OVERRIDE { properties[key] = std::vector<dyslang::f64>{ ptr, ptr + count }; }
-        vbegin(void) set(const dyslang::CString key, const dyslang::ResourceRefBase* ptr, const uint64_t count) SLANG_OVERRIDE { properties[key] = std::vector<dyslang::ResourceRefBase>{ ptr, ptr + count }; }
+#define dyslang_properties_get(TYPE) \
+    vbegin(void) get(const dyslang::CString key, TYPE** ptr, uint64_t* count) SLANG_OVERRIDE { \
+        auto& value = std::get<std::vector<TYPE>>(properties[key]); \
+        *count = value.size(); \
+        *ptr = value.data(); \
+    }
+        dyslang_properties_get(dyslang::u32)
+        dyslang_properties_get(dyslang::i32)
+        dyslang_properties_get(dyslang::u64)
+        dyslang_properties_get(dyslang::i64)
+        dyslang_properties_get(dyslang::f32)
+        dyslang_properties_get(dyslang::f64)
+        dyslang_properties_get(dyslang::ResourceRefBase)
+#undef dyslang_properties_get
+
+#define dyslang_properties_set(TYPE) vbegin(void) set(const dyslang::CString key, const TYPE* ptr, const uint64_t count) SLANG_OVERRIDE { properties[key] = std::vector<TYPE>{ ptr, ptr + count }; }
+        dyslang_properties_set(dyslang::u32)
+        dyslang_properties_set(dyslang::i32)
+    	dyslang_properties_set(dyslang::u64)
+        dyslang_properties_set(dyslang::i64)
+    	dyslang_properties_set(dyslang::f32)
+		dyslang_properties_set(dyslang::f64)
+		dyslang_properties_set(dyslang::ResourceRefBase)
+#undef dyslang_properties_set
 
         template <typename T> void set(const dyslang::CString key, const T& data) { set(key, &data, 1); }
     	template <typename T> void set(const dyslang::CString key, const std::vector<T>& data) { set(key, data.data(), data.size()); }
