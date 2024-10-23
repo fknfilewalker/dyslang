@@ -2,7 +2,7 @@
 import emitter;
 
 struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
-    dyslang::i64 id;
+    dyslang::i32 id;
     vector<Real, 3> position;
     Real range;
     vector<Real, 3> color;
@@ -12,7 +12,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
 
     __init(dyslang::Properties properties) {
         if (properties.has("id")) {
-            id = properties.get<dyslang::i64>("id");
+            id = properties.get<dyslang::i32>("id");
         } else id = -1;
 
         if (properties.has("position")) {
