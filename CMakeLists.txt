@@ -57,7 +57,7 @@ if(WIN32)
 	add_definitions(-DNOMINMAX)
 endif()
 
-option(DYSLANG_SLANG_FROM_SUBMODULE OFF)
+set(DYSLANG_SLANG_FROM_SUBMODULE FALSE)
 if(NOT DYSLANG_SLANG_FROM_SUBMODULE)
     FetchContent_Populate(slang_zip URL https://github.com/shader-slang/slang/releases/download/v${DYSLANG_SLANG_VERSION}/slang-${DYSLANG_SLANG_VERSION}-${DYSLANG_SLANG_OS}.zip QUIET)
     message(STATUS "Slang dir: ${slang_zip_SOURCE_DIR}")
