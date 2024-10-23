@@ -299,7 +299,11 @@ namespace dyslang {
     template <typename T> inline constexpr bool is_arithmetic_v = std::is_floating_point_v<T> || std::is_integral_v<T>;
 
     template <arithmetic T, uint64_t N> using vector = std::array<T, N>;//glm::vec<N, T>;
-    template <arithmetic T, uint64_t M, uint64_t N> using matrix = std::array<std::array<T, N>, M>;//glm::mat<M, N, T>;
+    template <arithmetic T, size_t M, size_t N> struct matrix {
+        static const uint64_t slots = M * N;
+    	const T* data() const { return _data.data(); }
+        std::array<T, slots> _data;//glm::mat<M, N, T>;
+    };
 
     inline constexpr auto none = std::nullopt;
 
@@ -511,7 +515,13 @@ namespace __private {
 					uint64_t count;
 					props->get(key, (T**)value, &count);
                     if (count != N) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
-				}	
+				}
+				template <typename T, int ROWS, int COLS, typename PROPERTIES_T> 
+                void getProperty(const char* key, Matrix<T, ROWS, COLS>** value, PROPERTIES_T& props){	
+					uint64_t count;
+					props->get(key, (T**)value, &count);
+                    if (count != (ROWS * COLS)) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
+				}
             )");
         __intrinsic_asm R"(getProperty($0, $1, $2))";
     }
@@ -529,6 +539,10 @@ namespace __private {
             template <typename T, size_t N, typename PROPERTIES_T> 
             void setProperty(const char* key, FixedArray<T, N>& value, PROPERTIES_T& props){
                 props->set(key, (T*)&value, N);
+            }
+			template <typename T, int ROWS, int COLS, typename PROPERTIES_T> 
+            void setProperty(const char* key, Matrix<T, ROWS, COLS>& value, PROPERTIES_T& props){
+                props->set(key, (T*)&value, ROWS * COLS);
             }
         )");
         __intrinsic_asm R"(setProperty($0, $1, $2))";
@@ -620,6 +634,7 @@ struct Properties {
         template <typename T> void set(const dyslang::CString key, const T& data) { set(key, &data, 1); }
     	template <typename T> void set(const dyslang::CString key, const std::vector<T>& data) { set(key, data.data(), data.size()); }
         template <typename T, size_t N> void set(const dyslang::CString key, const std::array<T, N>& data) { set(key, data.data(), N); }
+        template <arithmetic T, std::size_t M, std::size_t N> void set(const dyslang::CString key, const dyslang::matrix<T, M, N>& data) { set(key, data.data(), M * N); }
 
         /*template <typename T>
         T find(const char* key) {
