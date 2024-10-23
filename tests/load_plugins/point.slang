@@ -26,7 +26,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         } else intensity = Real(1.0);
 
         if (properties.has("texture")) {
-            texture = properties.getTexture2DRef<vector<Real, 3>>("texture");
+            texture = properties.get<Texture2D<vector<Real, 3>>>("texture");
         }
     }
 
@@ -35,7 +35,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         properties.set("range", range);
         properties.set("color", color);
         properties.set("intensity", intensity);
-        properties.setResourceRef("texture", texture);
+        properties.set("texture", texture);
         Real arr[10] = { Real(1.0), Real(2.0), Real(3.0), Real(4.0), Real(5.0), Real(6.0), Real(7.0), Real(8.0), Real(9.0), Real(10.0) };
         properties.set("arr_test", arr);
     }

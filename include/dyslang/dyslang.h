@@ -432,9 +432,6 @@ __DynamicResource<__DynamicResourceKind::General> __global_resource_array[];
 namespace dyslang
 {
 #ifdef __cplusplus
-    template <typename T> struct Texture1D { };
-    template <typename T> struct Texture2D { };
-
 	// todo limit to resource types
     template <typename T>
     concept resource = !always_false_v<T>;
@@ -560,29 +557,27 @@ struct Properties {
 #endif
     }
 
+	dyslang::ResourceRef<T> get<T : __IDynamicResourceCastable<__DynamicResourceKind::General>>(dyslang::CString key) {
+#ifdef __SLANG_CPP__
+	    dyslang::ResourceRefBase* ptr = nullptr;
+	    __private::get<dyslang::ResourceRefBase>(key, &ptr, __properties);
+	    return dyslang::ResourceRef<T>( ptr->_idx );
+#else
+        return {};
+#endif
+    }
+
     void set<T>(dyslang::CString key, T value) {
 #ifdef __SLANG_CPP__
         __private::set<T>(key, value, __properties);
 #endif
     }
-
-    dyslang::ResourceRef<T> getResourceRef<T : __IDynamicResourceCastable<__DynamicResourceKind::General>>(dyslang::CString key) {
-#ifdef __SLANG_CPP__
-        dyslang::ResourceRefBase* ptr = nullptr;
-        __private::get<dyslang::ResourceRefBase>(key, &ptr, __properties);
-        return dyslang::ResourceRef<T>( ptr->_idx );
-#else
-        return {};
-#endif
-    }
-    dyslang::Texture2DRef<T> getTexture2DRef<T>(dyslang::CString key) { return getResourceRef<Texture2D<T>>(key); }
-	dyslang::Sampler2DRef<T> getSampler2DRef<T>(dyslang::CString key) { return getResourceRef<Sampler2D<T>>(key); }
-
-    void setResourceRef<T : __IDynamicResourceCastable<__DynamicResourceKind::General>>(dyslang::CString key, dyslang::ResourceRef<T> value) {
+    void set<T : __IDynamicResourceCastable<__DynamicResourceKind::General>>(dyslang::CString key, dyslang::ResourceRef<T> value) {
 #ifdef __SLANG_CPP__
         __private::set<dyslang::ResourceRefBase>(key, value, __properties);
 #endif
     }
+
 };
 
 #elif __cplusplus
