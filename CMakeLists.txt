@@ -57,27 +57,34 @@ if(WIN32)
 	add_definitions(-DNOMINMAX)
 endif()
 
-FetchContent_Populate(slang_zip URL https://github.com/shader-slang/slang/releases/download/v${DYSLANG_SLANG_VERSION}/slang-${DYSLANG_SLANG_VERSION}-${DYSLANG_SLANG_OS}.zip QUIET)
-message(STATUS "Slang dir: ${slang_zip_SOURCE_DIR}")
-add_library(slang SHARED IMPORTED GLOBAL)
-add_library(slang::slang ALIAS slang)
-if(WIN32)
-    set_target_properties(slang PROPERTIES
-        IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/bin/slang.dll
-        IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang.lib
-        INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
-    )
-elseif(APPLE)
-    set_target_properties(slang PROPERTIES
-        IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.dylib
-        INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
-    )
-elseif(UNIX)
-    set_target_properties(slang PROPERTIES
-        IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.so
-        INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
-    )
+option(DYSLANG_SLANG_FROM_SUBMODULE OFF)
+if(NOT DYSLANG_SLANG_FROM_SUBMODULE)
+    FetchContent_Populate(slang_zip URL https://github.com/shader-slang/slang/releases/download/v${DYSLANG_SLANG_VERSION}/slang-${DYSLANG_SLANG_VERSION}-${DYSLANG_SLANG_OS}.zip QUIET)
+    message(STATUS "Slang dir: ${slang_zip_SOURCE_DIR}")
+    add_library(slang SHARED IMPORTED GLOBAL)
+    if(WIN32)
+        set_target_properties(slang PROPERTIES
+            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/bin/slang.dll
+            IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang.lib
+            INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
+        )
+    elseif(APPLE)
+        set_target_properties(slang PROPERTIES
+            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.dylib
+            INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
+        )
+    elseif(UNIX)
+        set_target_properties(slang PROPERTIES
+            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.so
+            INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
+        )
+    endif()
+else()
+    FetchContent_Declare(slang GIT_REPOSITORY https://github.com/shader-slang/slang)
+    FetchContent_MakeAvailable(slang)
+    target_include_directories(slang INTERFACE ${slang_SOURCE_DIR}/include)
 endif()
+add_library(slang::slang ALIAS slang)
 
 add_subdirectory(plugin_compiler)
 add_subdirectory(src)
