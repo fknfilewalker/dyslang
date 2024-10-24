@@ -496,7 +496,7 @@ namespace dyslang
 #ifdef __SLANG_CPP__
 
 namespace __private {
-    void get<T>(dyslang::CString key, T** value, dyslang::IProperties properties) {
+    T get<T>(dyslang::CString key, dyslang::IProperties properties) {
         __requirePrelude(R"(
                 #include <type_traits>
                 #include <stdexcept>
@@ -512,31 +512,39 @@ namespace __private {
                 };
 				
 				template <typename T, typename PROPERTIES_T> 
-                void getProperty(const char* key, T** value, PROPERTIES_T& props){
+                T getProperty(const char* key, T dummy, PROPERTIES_T& props){
+                    T* value;
 					uint64_t count;
-					props->get(key, value, &count);
+					props->get(key, &value, &count);
                     if (count != 1) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
-				}
+                    return *value;
+                }
 				template <typename T, int N, typename PROPERTIES_T> 
-                void getProperty(const char* key, Vector<T, N>** value, PROPERTIES_T& props){	
-					uint64_t count;
-					props->get(key, (T**)value, &count);
+                Vector<T, N> getProperty(const char* key, Vector<T, N> dummy, PROPERTIES_T& props){	
+					T* value;
+                    uint64_t count;
+					props->get(key, (T**)&value, &count);
                     if (count != N) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
-				}
+                    return *value;
+                }
 				template <typename T, size_t N, typename PROPERTIES_T> 
-                void getProperty(const char* key, FixedArray<T, N>** value, PROPERTIES_T& props){	
-					uint64_t count;
-					props->get(key, (T**)value, &count);
+                FixedArray<T, N> getProperty(const char* key, FixedArray<T, N> dummy, PROPERTIES_T& props){	
+					T* value;
+                    uint64_t count;
+					props->get(key, (T**)&value, &count);
                     if (count != N) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
-				}
+                    return *value;
+                }
 				template <typename T, int ROWS, int COLS, typename PROPERTIES_T> 
-                void getProperty(const char* key, Matrix<T, ROWS, COLS>** value, PROPERTIES_T& props){	
-					uint64_t count;
-					props->get(key, (T**)value, &count);
+                Matrix<T, ROWS, COLS> getProperty(const char* key, Matrix<T, ROWS, COLS> dummy, PROPERTIES_T& props){	
+					T* value;
+                    uint64_t count;
+					props->get(key, (T**)&value, &count);
                     if (count != (ROWS * COLS)) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
-				}
+                    return *value;
+                }
             )");
-        __intrinsic_asm R"(getProperty($0, $1, $2))";
+        __intrinsic_asm R"(getProperty($0, $TR(), $1))";
     }
 
     void set<T>(dyslang::CString key, T value, dyslang::IProperties properties) {
@@ -579,9 +587,7 @@ struct Properties {
 
     T get<T>(dyslang::CString key) {
 #ifdef __SLANG_CPP__
-        T* ptr = nullptr;
-        __private::get<T>(key, &ptr, __properties);
-        return *ptr;
+        return __private::get<T>(key, __properties);
 #else
         return {};
 #endif
@@ -589,9 +595,7 @@ struct Properties {
 
 	dyslang::ResourceRef<T> get<T : __IDynamicResourceCastable<__DynamicResourceKind::General>>(dyslang::CString key) {
 #ifdef __SLANG_CPP__
-	    dyslang::ResourceRefBase* ptr = nullptr;
-	    __private::get<dyslang::ResourceRefBase>(key, &ptr, __properties);
-	    return dyslang::ResourceRef<T>( ptr->_idx );
+        return dyslang::ResourceRef<T>(__private::get<dyslang::ResourceRefBase>(key, __properties)._idx);
 #else
         return {};
 #endif
