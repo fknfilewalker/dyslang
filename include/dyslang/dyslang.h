@@ -521,7 +521,7 @@ namespace __private {
                 }
 				template <typename T, int N, typename PROPERTIES_T> 
                 Vector<T, N> getProperty(const char* key, Vector<T, N> dummy, PROPERTIES_T& props){	
-					T* value;
+					Vector<T, N>* value;
                     uint64_t count;
 					props->get(key, (T**)&value, &count);
                     if (count != N) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
@@ -529,7 +529,7 @@ namespace __private {
                 }
 				template <typename T, size_t N, typename PROPERTIES_T> 
                 FixedArray<T, N> getProperty(const char* key, FixedArray<T, N> dummy, PROPERTIES_T& props){	
-					T* value;
+					FixedArray<T, N>* value;
                     uint64_t count;
 					props->get(key, (T**)&value, &count);
                     if (count != N) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
@@ -537,7 +537,7 @@ namespace __private {
                 }
 				template <typename T, int ROWS, int COLS, typename PROPERTIES_T> 
                 Matrix<T, ROWS, COLS> getProperty(const char* key, Matrix<T, ROWS, COLS> dummy, PROPERTIES_T& props){	
-					T* value;
+					Matrix<T, ROWS, COLS>* value;
                     uint64_t count;
 					props->get(key, (T**)&value, &count);
                     if (count != (ROWS * COLS)) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
