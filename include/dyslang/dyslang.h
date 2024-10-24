@@ -114,8 +114,8 @@
 #define IDENTITY(NAME, ...) UNWRAP_VARIANT __VA_ARGS__
 #define STRINGIFY(NAME, ...) #NAME UNWRAP_VARIANT_STRING __VA_ARGS__
 #define SIZE_OF(NAME, ...) sizeof(NAME UNWRAP_VARIANT __VA_ARGS__)
-#define CREATE_OBJECT_INPLACE(NAME, ...) __create_object_inplace_helper<NAME UNWRAP_VARIANT __VA_ARGS__>(ptr, NAME UNWRAP_VARIANT __VA_ARGS__({props}))
-#define TRAVERSE_OBJECT(NAME, ...) Ptr<NAME UNWRAP_VARIANT __VA_ARGS__>(ptr).traverse({props})
+#define CREATE_OBJECT_INPLACE(NAME, ...) __create_object_inplace_helper<NAME UNWRAP_VARIANT __VA_ARGS__>(ptr, NAME UNWRAP_VARIANT __VA_ARGS__(dyslang::Properties(props)))
+#define TRAVERSE_OBJECT(NAME, ...) Ptr<NAME UNWRAP_VARIANT __VA_ARGS__>(ptr).traverse(dyslang::Properties(props))
 
 // set by plugincompiler
 #ifndef __DYSLANG_VARIANTS__
@@ -222,14 +222,14 @@ _VISIBILITY interface _NAME {
 
 
 #ifdef __SLANG_CPP__
-bool operator==(dyslang::CString left, dyslang::CString right)
+bool operator==(NativeString left, NativeString right)
 {
     __requirePrelude(R"(
 		#include <cstring>
     )");
     __intrinsic_asm R"(strcmp($0, $1) == 0)";
 }
-bool operator!=(dyslang::CString left, dyslang::CString right)
+bool operator!=(NativeString left, NativeString right)
 {
     return !(left == right);
 }
@@ -566,6 +566,9 @@ namespace __private {
 
 struct Properties {
     private dyslang::IProperties __properties;
+    __init(dyslang::IProperties properties){
+        __properties = properties;
+    }
     bool has(dyslang::CString key) {
 #ifdef __SLANG_CPP__
         return (bool)__properties.has_property(key);
