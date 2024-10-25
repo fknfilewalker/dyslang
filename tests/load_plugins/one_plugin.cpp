@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
     dyslang::Slangc slangc{ includes, defines };
     std::string_view moduleName = "load_plugins/interface_test";
     slangc.addModule(moduleName);
-    slangc.addModule(light->implementation_name, light->implementation_name, plugin.slang_module_blob());
+    slangc.addModule(plugin.implementation_name, plugin.implementation_name, plugin.slang_module_blob());
     slangc.addEntryPoint(moduleName, "main");
     slangc.finalizeModulesAndEntryPoints();
 	auto bindings = slangc.globalResourceArrayBinding();
