@@ -76,6 +76,12 @@ Slang::ComPtr<slang::IBlob> compileSlangModule(const Slang::ComPtr<slang::IGloba
     sessionDesc.searchPathCount = static_cast<SlangInt>(includes.size());
     sessionDesc.searchPaths = includes.data();
 
+    slang::PreprocessorMacroDesc macros[] = {
+        { "__DYSLANG__", "1" }
+    };
+    sessionDesc.preprocessorMacroCount = static_cast<SlangInt>(std::size(macros));
+    sessionDesc.preprocessorMacros = macros;
+
     if (SLANG_FAILED(globalSession->createSession(sessionDesc, session.writeRef()))) exitWithError("Error creating slang session");
 
     Slang::ComPtr<slang::IBlob> diagnosticsBlob;
@@ -118,6 +124,7 @@ Slang::ComPtr<slang::IBlob> compilerSharedLib(const Slang::ComPtr<slang::IGlobal
 
     SlangCompileRequest* slangRequest = spCreateCompileRequest(globalSession);
     int targetIndex = spAddCodeGenTarget(slangRequest, SLANG_SHADER_SHARED_LIBRARY);
+    spAddPreprocessorDefine(slangRequest, "__DYSLANG__", "1");
     spAddPreprocessorDefine(slangRequest, "__SLANG_CPP__", "1");
     spAddPreprocessorDefine(slangRequest, "__DYSLANG_VARIANTS__", define.c_str());
     spSetTargetFlags(slangRequest, targetIndex, SLANG_TARGET_FLAG_GENERATE_WHOLE_PROGRAM);
