@@ -1,7 +1,7 @@
 #include <filesystem>
 #include <iostream>
 #include <slang.h>
-#include <dyslang/dyslang.h>\
+#include <dyslang/dyslang.h>
 
 int main(int argc, char* argv[]) {
     std::filesystem::path path = std::filesystem::current_path();
