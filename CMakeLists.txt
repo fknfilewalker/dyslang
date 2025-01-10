@@ -65,6 +65,7 @@ if(NOT DYSLANG_SLANG_FROM_SUBMODULE)
     if(WIN32)
         set_target_properties(slang PROPERTIES
             IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/bin/slang.dll
+            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/bin/slang-glslang.dll
             IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang.lib
             INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
         )
