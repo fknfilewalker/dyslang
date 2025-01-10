@@ -34,7 +34,7 @@ else()
     set(SLANG_IS_TOPLEVEL_PROJECT FALSE)
 endif()
 
-set(DYSLANG_SLANG_VERSION "2025.1")
+set(DYSLANG_SLANG_VERSION "2025.2")
 if(WIN32)
     set(DYSLANG_SLANG_OS "windows-x86_64")
 elseif(APPLE)
@@ -72,11 +72,13 @@ if(NOT DYSLANG_SLANG_FROM_SUBMODULE)
     elseif(APPLE)
         set_target_properties(slang PROPERTIES
             IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.dylib
+            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-glslang.dylib
             INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
         )
     elseif(UNIX)
         set_target_properties(slang PROPERTIES
             IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.so
+            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-glslang.so
             INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
         )
     endif()
