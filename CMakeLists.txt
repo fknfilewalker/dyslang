@@ -65,16 +65,24 @@ if(NOT DYSLANG_SLANG_FROM_SUBMODULE)
     if(WIN32)
         set_target_properties(slang PROPERTIES
             IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/bin/slang.dll
+            IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang.lib
+            INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
+        )
+        # workaround
+        add_library(slang-glslang SHARED IMPORTED GLOBAL)
+        set_target_properties(slang-glslang PROPERTIES
             IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/bin/slang-glslang.dll
             IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang.lib
             INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
         )
+        set_property(TARGET slang PROPERTY INTERFACE_LINK_LIBRARIES slang-glslang)
+        add_library(slang::slang-glslang ALIAS slang-glslang)
     elseif(APPLE)
         set_target_properties(slang PROPERTIES
             IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.dylib
-            # IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-glslang.dylib
             INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
         )
+        # IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-glslang.dylib
     elseif(UNIX)
         set_target_properties(slang PROPERTIES
             IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.so
