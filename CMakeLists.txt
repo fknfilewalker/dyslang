@@ -72,7 +72,7 @@ if(NOT DYSLANG_SLANG_FROM_SUBMODULE)
     elseif(APPLE)
         set_target_properties(slang PROPERTIES
             IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.dylib
-            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-glslang.dylib
+            # IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-glslang.dylib
             INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
         )
     elseif(UNIX)
