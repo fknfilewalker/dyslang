@@ -461,8 +461,8 @@ namespace dyslang
     };
 
 #if __SLANG__
-    generic(gvar(T)) slang_internal typealias Texture2DRef = dyslang::ResourceRef<Texture2D<T>>;
-    generic(gvar(T)) slang_internal typealias Sampler2DRef = dyslang::ResourceRef<Sampler2D<T>>;
+    generic(gtvar(ITexelElement, T)) slang_internal typealias Texture2DRef = dyslang::ResourceRef<Texture2D<T>>;
+    generic(gtvar(ITexelElement, T)) slang_internal typealias Sampler2DRef = dyslang::ResourceRef<Sampler2D<T>>;
 #endif
 
     slangInterfaceUUID(
