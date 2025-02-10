@@ -55,7 +55,7 @@ std::string dyslang::Plugin::implementation_variant_name(const char* variant) co
 }
 
 std::string dyslang::Plugin::to_string() const {
-    return "Plugin:\n Interface: " + interface_name + "\n Implementation: " + implementation_name + "\n";
+    return "Plugin:\n Interface: " + interface_name + "\n Implementation: " + implementation_name + "\n Variants: " + available_variants + "\n";
 }
 
 const dyslang::SlangBinaryBlob* dyslang::Plugin::slang_module_blob() const
