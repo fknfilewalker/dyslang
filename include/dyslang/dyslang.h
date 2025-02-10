@@ -589,7 +589,7 @@ struct Properties {
 #ifdef __SLANG_CPP__
         return __private::get<T>(key, __properties);
 #else
-        return {};
+        return { {} };
 #endif
     }
 
@@ -597,7 +597,7 @@ struct Properties {
 #ifdef __SLANG_CPP__
         return dyslang::ResourceRef<T>(__private::get<dyslang::ResourceRefBase>(key, __properties)._idx);
 #else
-        return {};
+        return { {} };
 #endif
     }
 
