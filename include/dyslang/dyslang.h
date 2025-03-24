@@ -153,7 +153,6 @@
 #define gdtvar(TYPE, VAR, DEFAULT) TYPE VAR = DEFAULT // typed template variable
 #define gdvvar(TYPE, VAR, DEFAULT) TYPE VAR = DEFAULT // typed template variable
 #define generic(...) template <__VA_ARGS__>
-#define subscript operator[]
 
 #define associatedtype(NAME)
 #define cassociatedtype(NAME, CONSTRAIN)
@@ -193,7 +192,6 @@ _UUID
 #define gdtvar(TYPE, VAR, DEFAULT) VAR : TYPE = DEFAULT
 #define gdvvar(TYPE, VAR, DEFAULT) let VAR : TYPE = DEFAULT
 #define generic(...) __generic<__VA_ARGS__>
-#define subscript __subscript
 
 #define associatedtype(NAME) associatedtype NAME
 #define cassociatedtype(NAME, CONSTRAIN) associatedtype NAME : CONSTRAIN
