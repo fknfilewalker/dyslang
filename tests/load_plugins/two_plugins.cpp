@@ -1,7 +1,7 @@
 #include <filesystem>
 #include <iostream>
 #include <slang.h>
-#include <dyslang/dyslang.h>\
+#include <dyslang/dyslang.h>
 
 int main(int argc, char* argv[]) {
     std::filesystem::path path = std::filesystem::current_path();
@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
     std::vector<dyslang::Slangc::ArgPair> defines;
     // compile
     dyslang::Slangc slangc{ includes, defines };
-    std::string_view moduleName = "load_plugins/interface_test";
+    std::string_view moduleName = "tests/load_plugins/interface_test";
     slangc.addModule(moduleName);
     slangc.addModule(point_plugin.implementation_name, point_plugin.implementation_name, point_plugin.slang_module_blob());
     slangc.addModule(spot_plugin.implementation_name, spot_plugin.implementation_name, spot_plugin.slang_module_blob());
