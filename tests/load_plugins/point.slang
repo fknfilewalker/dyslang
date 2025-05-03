@@ -1,7 +1,7 @@
 #include "../../include/dyslang/dyslang.h"
 import emitter;
 
-struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
+struct PointLight<Real : dyslang::floating_point> : IEmitter<Real> {
     dyslang::i32 id;
     vector<Real, 3> position;
     Real range;

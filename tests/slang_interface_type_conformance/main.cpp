@@ -9,7 +9,7 @@ int main(int argc, char* argv[]) {
     std::vector<Slangc::ArgPair> defines;
 
     Slangc slangc{ includes, defines };
-    std::string_view moduleName = "slang_interface_type_conformance/interface_from_buffer";
+    std::string_view moduleName = "tests/slang_interface_type_conformance/interface_from_buffer";
     slangc.addModule(moduleName);
     slangc.addEntryPoint(moduleName, "main");
     slangc.finalizeModulesAndEntryPoints();

@@ -143,26 +143,6 @@
 //}
 
 #ifdef __cplusplus
-#define slang_public
-#define slang_internal
-#define slang_private
-#define typealias using
-#define gvar(VAR) typename VAR
-#define gtvar(TYPE, VAR) TYPE VAR   // typed template variable
-#define gvvar(TYPE, VAR) TYPE VAR   // typed non-type variable
-#define gdtvar(TYPE, VAR, DEFAULT) TYPE VAR = DEFAULT // typed template variable
-#define gdvvar(TYPE, VAR, DEFAULT) TYPE VAR = DEFAULT // typed template variable
-#define generic(...) template <__VA_ARGS__>
-
-#define associatedtype(NAME)
-#define cassociatedtype(NAME, CONSTRAIN)
-
-// #define var auto
-#define let const auto
-
-#define differentiable
-#define constructor(NAME) NAME
-#define mutating        // for methods that modify the object
 
 #define UUID(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, _31) \
 SLANG_COM_INTERFACE(0x##_0 ##_1 ##_2 ##_3 ##_4 ##_5 ##_6 ##_7, 0x##_8 ##_9 ##_10 ##_11, 0x##_12 ##_13 ##_14 ##_15, { 0x##_16 ##_17, 0x##_18 ##_19, 0x##_20 ##_21, 0x##_22 ##_23, 0x##_24 ##_25, 0x##_26 ##_27, 0x##_28 ##_29, 0x##_30 ##_31 } )
@@ -178,27 +158,41 @@ struct _NAME : public ISlangUnknown {
 _GENERIC \
 struct _NAME : public ISlangUnknown { \
 _UUID
+
+#define slang_public
+#define slang_internal
+#define slang_private
+
+#define __generic template
+#define __concept(TYPE, VAR) TYPE VAR
+#define annotations(...)
+#define init(NAME) NAME
+#define interface struct
+#define no_diff
+#define typealias using
+#define property
+
 #define vbegin(RETURN) virtual SLANG_NO_THROW RETURN SLANG_MCALL  // for interface methods
 #define vend = 0        // for interface methods
+
+#define associatedtype(NAME)
+#define cassociatedtype(NAME, CONSTRAIN)
 
 #elif defined(__SLANG__)
 #define slang_public public
 #define slang_internal internal
 #define slang_private private
-#define typealias typealias
-#define gvar(VAR) VAR
-#define gtvar(TYPE, VAR) VAR : TYPE
-#define gvvar(TYPE, VAR) let VAR : TYPE
-#define gdtvar(TYPE, VAR, DEFAULT) VAR : TYPE = DEFAULT
-#define gdvvar(TYPE, VAR, DEFAULT) let VAR : TYPE = DEFAULT
-#define generic(...) __generic<__VA_ARGS__>
+
+#define __concept(TYPE, VAR) VAR : TYPE
+#define annotations(...) [__VA_ARGS__]
+#define init(NAME) __init
+#define vbegin(RETURN) RETURN
+#define vend
+#define constexpr const
+#define auto var
 
 #define associatedtype(NAME) associatedtype NAME
 #define cassociatedtype(NAME, CONSTRAIN) associatedtype NAME : CONSTRAIN
-
-#define differentiable [Differentiable]
-#define constructor(NAME) __init
-#define mutating [mutating]
 
 
 #define UUID(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, _31) \
@@ -214,10 +208,6 @@ _VISIBILITY interface _NAME {
 _UUID \
 _GENERIC \
 _VISIBILITY interface _NAME {
-#define vbegin(RETURN) RETURN
-#define vend
-#define auto var
-
 
 #ifdef __SLANG_CPP__
 bool operator==(NativeString left, NativeString right)
@@ -354,9 +344,9 @@ namespace dyslang {
     slang_internal typealias f32 = float;
     slang_internal typealias f64 = double;
 
-    generic(gtvar(arithmetic, T)) slang_internal typealias v2 = vector<T, 2>;
-    generic(gtvar(arithmetic, T)) slang_internal typealias v3 = vector<T, 3>;
-    generic(gtvar(arithmetic, T)) slang_internal typealias v4 = vector<T, 4>;
+    __generic<__concept(arithmetic, T)> slang_internal typealias v2 = vector<T, 2>;
+    __generic<__concept(arithmetic, T)> slang_internal typealias v3 = vector<T, 3>;
+    __generic<__concept(arithmetic, T)> slang_internal typealias v4 = vector<T, 4>;
 
     slang_internal typealias b32v2 = v2<uint32_t>;
     slang_internal typealias b32v3 = v3<uint32_t>;
@@ -386,9 +376,9 @@ namespace dyslang {
     slang_internal typealias f64v3 = v3<double>;
     slang_internal typealias f64v4 = v4<double>;
 
-    generic(gtvar(arithmetic, T)) slang_internal typealias m2x2 = matrix<T, 2, 2>;
-    generic(gtvar(arithmetic, T)) slang_internal typealias m3x3 = matrix<T, 3, 3>;
-    generic(gtvar(arithmetic, T)) slang_internal typealias m4x4 = matrix<T, 4, 4>;
+    __generic<__concept(arithmetic, T)> slang_internal typealias m2x2 = matrix<T, 2, 2>;
+    __generic<__concept(arithmetic, T)> slang_internal typealias m3x3 = matrix<T, 3, 3>;
+    __generic<__concept(arithmetic, T)> slang_internal typealias m4x4 = matrix<T, 4, 4>;
 
     slang_internal typealias f32m2x2 = m2x2<float>;
     slang_internal typealias f32m3x3 = m3x3<float>;
@@ -398,13 +388,13 @@ namespace dyslang {
     slang_internal typealias f64m3x3 = m3x3<double>;
     slang_internal typealias f64m4x4 = m4x4<double>;
 
-    generic(gvar(First), gvar(Second)) struct Pair
+    __generic<typename First, typename Second> struct Pair
     {
         First first;
         Second second;
     };
 
-    generic(gvar(T), gvvar(u32, N)) struct HashMap {
+    __generic<typename T, u32 N> struct HashMap {
         u32 bucketIndex(const u32 hash) {
             return hash % N;
         }
@@ -413,8 +403,8 @@ namespace dyslang {
             return values[bucketIndex(hash)];
         }
 
-        mutating b32 insert(const u32 hash, const T value) {
-            let idx = bucketIndex(hash);
+        annotations(mutating) b32 insert(const u32 hash, const T value) {
+            auto idx = bucketIndex(hash);
             if (values[idx].hasValue) return false;
             values[idx] = Optional<T>(value);
             return true;
@@ -448,7 +438,7 @@ namespace dyslang
 #ifdef __cplusplus
     struct ResourceRef : ResourceRefBase
 #elif __SLANG__
-    generic(gtvar(resource, T)) slang_internal struct ResourceRef : ResourceRefBase
+    __generic<__concept(resource, T)> slang_internal struct ResourceRef : ResourceRefBase
 #endif
     {
 #ifdef __cplusplus
@@ -459,8 +449,8 @@ namespace dyslang
     };
 
 #if __SLANG__
-    generic(gtvar(ITexelElement, T)) slang_internal typealias Texture2DRef = dyslang::ResourceRef<Texture2D<T>>;
-    generic(gtvar(ITexelElement, T)) slang_internal typealias Sampler2DRef = dyslang::ResourceRef<Sampler2D<T>>;
+    __generic<__concept(ITexelElement, T)> slang_internal typealias Texture2DRef = dyslang::ResourceRef<Texture2D<T>>;
+    __generic<__concept(ITexelElement, T)> slang_internal typealias Sampler2DRef = dyslang::ResourceRef<Sampler2D<T>>;
 #endif
 
     slangInterfaceUUID(

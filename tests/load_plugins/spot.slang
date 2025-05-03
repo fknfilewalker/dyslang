@@ -1,7 +1,7 @@
 #include "../../include/dyslang/dyslang.h"
 import emitter;
 
-struct SpotLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
+struct SpotLight<Real : dyslang::floating_point> : IEmitter<Real> {
     Real test;
 
     __init(dyslang::Properties properties) {
