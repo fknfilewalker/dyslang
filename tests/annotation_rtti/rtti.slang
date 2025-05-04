@@ -1,3 +1,9 @@
+__generic<T>
+struct StaticArray {
+    T* data;
+    uint64_t size;
+};
+
 [DllExport] int test(int x) {
     return 42 * x;
 }
@@ -6,16 +12,19 @@
 struct RTTIAttribute{};
 
 interface IEmitter {
-    [Differentiable]
-    int add(int z);
-    // int sub();
+   [Differentiable]
+   int add(int z);
 }
 
+// type_param Real : __BuiltinFloatingPointType;
+
 [RTTI]
-struct Point/*<Real : __BuiltinFloatingPointType>*/ : IEmitter {
-    //Real a;
+struct Point<Real : __BuiltinFloatingPointType> : IEmitter {
     int x;
     int y;
+    Real a;
+    int arr[3];
+    StaticArray<Real> profile;
 
     [DllExport, Differentiable]
     int add(int z) {
