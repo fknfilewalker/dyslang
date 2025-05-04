@@ -86,30 +86,30 @@ const char* scalar_type_to_string(const slang::TypeReflection::ScalarType kind)
 //    return out;
 //}
 
-void print_type(slang::TypeReflection* type, const size_t depth);
+void print_type(slang::TypeLayoutReflection* type, const size_t depth);
 
-void print_variable(slang::VariableReflection* var, const size_t depth = 0)
+void print_variable(slang::VariableLayoutReflection* var, const size_t depth = 0)
 {
 	std::string indent(depth * 2, ' ');
 	const char* name = var->getName();
-    printf("%s- %s\n", indent.c_str(), name);
-    print_type(var->getType(), depth + 2);
+    printf("%s- %s offset: %llu\n", indent.c_str(), name, var->getOffset());
+    print_type(var->getTypeLayout(), depth + 2);
 }
 
-void print_type(slang::TypeReflection* type, const size_t depth = 0)
+void print_type(slang::TypeLayoutReflection* type, const size_t depth = 0)
 {
 	std::string indent(depth * 2, ' ');
 	const char* name = type->getName();
 	const char* kind = type_kind_to_string(type->getKind());
 	const char* scalar_type = scalar_type_to_string(type->getScalarType());
-	printf("%s- %s %s (%s elements: %llu)\n", indent.c_str(), kind, name, scalar_type, type->getElementCount());
+	printf("%s- %s %s (%s elements: %llu size: %llu alignment: %d)\n", indent.c_str(), kind, name, scalar_type, type->getElementCount(), type->getSize(), type->getAlignment());
 	for (uint32_t i = 0; i < type->getFieldCount(); i++)
 	{
         print_variable(type->getFieldByIndex(i), depth + 2);
 	}
 	if (type->getKind() == slang::TypeReflection::Kind::Array)
 	{
-		print_type(type->getElementType(), depth + 2);
+		print_type(type->getElementTypeLayout(), depth + 2);
 	}
 	/*if (type->getKind() == slang::TypeReflection::Kind::Pointer)
 	{
@@ -138,9 +138,10 @@ struct ReflectRTTI
             checkError(diagnosticBlob);
 
             auto stype = type->applySpecializations(s_gen);
-            print_type(stype);
+            
+            print_type(layout->getTypeLayout(stype));
         }
-        else print_type(type);
+        else print_type(layout->getTypeLayout(type));
 	}
 
     slang::ProgramLayout* _layout;

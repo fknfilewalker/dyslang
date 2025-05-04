@@ -23,6 +23,7 @@ struct Point<Real : __BuiltinFloatingPointType> : IEmitter {
     int x;
     int y;
     Real a;
+    vector<Real, 3> b;
     int arr[3];
     StaticArray<Real> profile;
 
