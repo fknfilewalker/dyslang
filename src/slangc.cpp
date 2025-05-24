@@ -52,6 +52,13 @@ Slangc::Slangc(const std::vector<const char*>& includes, const std::vector<Slang
         if (SLANG_FAILED(slang::createGlobalSession(globalSession.writeRef()))) throw std::runtime_error("slang: error creating global session");
     }
 
+    std::vector<slang::CompilerOptionEntry> copts{
+        {slang::CompilerOptionName::VulkanUseEntryPointName, {slang::CompilerOptionValueKind::Int, 1}},
+        {slang::CompilerOptionName::StdRevision, {slang::CompilerOptionValueKind::String, 0, 0, "2026"}}
+        //{slang::CompilerOptionName::MinimumSlangOptimization, {slang::CompilerOptionValueKind::Int, 1} },
+        //{slang::CompilerOptionName::DebugInformation, {slang::CompilerOptionValueKind::Int, SlangDebugInfoLevel::SLANG_DEBUG_INFO_LEVEL_MAXIMAL}}
+    };
+
     slang::SessionDesc sessionDesc = {};
     slang::TargetDesc targetDesc = {};
     if (true) {
@@ -68,6 +75,8 @@ Slangc::Slangc(const std::vector<const char*>& includes, const std::vector<Slang
     sessionDesc.allowGLSLSyntax = true;
     sessionDesc.searchPathCount = static_cast<SlangInt>(includes.size());
     sessionDesc.searchPaths = includes.data();
+    sessionDesc.compilerOptionEntries = copts.data();
+    sessionDesc.compilerOptionEntryCount = static_cast<uint32_t>(copts.size());
     sessionDesc.preprocessorMacroCount = static_cast<SlangInt>(defines.size());
     sessionDesc.preprocessorMacros = reinterpret_cast<const slang::PreprocessorMacroDesc*>(defines.data());
 

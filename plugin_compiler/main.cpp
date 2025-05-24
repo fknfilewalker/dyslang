@@ -70,11 +70,16 @@ namespace {
 Slang::ComPtr<slang::IBlob> compileSlangModule(const Slang::ComPtr<slang::IGlobalSession>& globalSession, const SourceFile& source)
 {
     const std::vector includes = { source.path.c_str() };
+    std::vector<slang::CompilerOptionEntry> copts{
+        {slang::CompilerOptionName::StdRevision, {slang::CompilerOptionValueKind::String, 0, 0, "2026"}}
+    };
 
     Slang::ComPtr<slang::ISession> session;
     slang::SessionDesc sessionDesc = {};
     sessionDesc.searchPathCount = static_cast<SlangInt>(includes.size());
     sessionDesc.searchPaths = includes.data();
+    sessionDesc.compilerOptionEntries = copts.data();
+    sessionDesc.compilerOptionEntryCount = static_cast<uint32_t>(copts.size());
 
     slang::PreprocessorMacroDesc macros[] = {
         { "__DYSLANG__", "1" }
@@ -127,6 +132,7 @@ Slang::ComPtr<slang::IBlob> compilerSharedLib(const Slang::ComPtr<slang::IGlobal
     spAddPreprocessorDefine(slangRequest, "__DYSLANG__", "1");
     spAddPreprocessorDefine(slangRequest, "__SLANG_CPP__", "1");
     spAddPreprocessorDefine(slangRequest, "__DYSLANG_VARIANTS__", define.c_str());
+    
     spSetTargetFlags(slangRequest, targetIndex, SLANG_TARGET_FLAG_GENERATE_WHOLE_PROGRAM);
     int translationUnitIndex = spAddTranslationUnit(slangRequest, SLANG_SOURCE_LANGUAGE_SLANG, nullptr);
     spAddTranslationUnitSourceString(slangRequest, translationUnitIndex, source.module.c_str(), source.source.c_str());
@@ -160,7 +166,6 @@ int main(const int argc, char* argv[]) {
     std::cout << "argv: " << argv[1] << " " << argv[2] << '\n';
 
     Slang::ComPtr<slang::IGlobalSession> globalSession;
-    Slang::ComPtr<slang::ISession> session;
     if (!globalSession) {
         if (SLANG_FAILED(slang::createGlobalSession(globalSession.writeRef()))) exitWithError("Error creating global slang session");
     }

@@ -11,6 +11,7 @@ struct StaticArray {
 [__AttributeUsage(_AttributeTargets.Struct)]
 struct RTTIAttribute{};
 
+[anyValueSize(200)]
 interface IEmitter {
    [Differentiable]
    int add(int z);
