@@ -423,35 +423,35 @@ __DynamicResource<__DynamicResourceKind::General> __global_resource_array[];
 
 namespace dyslang
 {
-#ifdef __cplusplus
-	// todo limit to resource types
-    template <typename T>
-    concept resource = !always_false_v<T>;
-#elif __SLANG__
-    slang_internal typealias resource = __IDynamicResourceCastable<__DynamicResourceKind::General>;
-#endif
-
-    struct ResourceRefBase {
-        dyslang::i32 _idx;
-        bool has() { return _idx >= 0; }
-    };
-#ifdef __cplusplus
-    struct ResourceRef : ResourceRefBase
-#elif __SLANG__
-    __generic<__concept(resource, T)> slang_internal struct ResourceRef : ResourceRefBase
-#endif
-    {
-#ifdef __cplusplus
-        dyslang::i32 get() { return _idx; }
-#elif __SLANG__
-    	T get() { return __global_resource_array[_idx].as<T>(); }
-#endif
-    };
-
-#if __SLANG__
-    __generic<__concept(ITexelElement, T)> slang_internal typealias Texture2DRef = dyslang::ResourceRef<Texture2D<T>>;
-    __generic<__concept(ITexelElement, T)> slang_internal typealias Sampler2DRef = dyslang::ResourceRef<Sampler2D<T>>;
-#endif
+//#ifdef __cplusplus
+//	// todo limit to resource types
+//    template <typename T>
+//    concept resource = !always_false_v<T>;
+//#elif __SLANG__
+//    slang_internal typealias resource = __IDynamicResourceCastable<__DynamicResourceKind::General>;
+//#endif
+//
+//    struct ResourceRefBase {
+//        dyslang::i32 _idx;
+//        bool has() { return _idx >= 0; }
+//    };
+//#ifdef __cplusplus
+//    struct ResourceRef : ResourceRefBase
+//#elif __SLANG__
+//    __generic<__concept(resource, T)> slang_internal struct ResourceRef : ResourceRefBase
+//#endif
+//    {
+//#ifdef __cplusplus
+//        dyslang::i32 get() { return _idx; }
+//#elif __SLANG__
+//    	T get() { return __global_resource_array[_idx].as<T>(); }
+//#endif
+//    };
+//
+//#if __SLANG__
+//    __generic<__concept(ITexelElement, T)> slang_internal typealias Texture2DRef = dyslang::ResourceRef<Texture2D<T>>;
+//    __generic<__concept(ITexelElement, T)> slang_internal typealias Sampler2DRef = dyslang::ResourceRef<Sampler2D<T>>;
+//#endif
 
     slangInterfaceUUID(
         internal,
@@ -467,7 +467,7 @@ namespace dyslang
         dyslang_properties_get(dyslang::i64)
         dyslang_properties_get(dyslang::f32)
         dyslang_properties_get(dyslang::f64)
-        dyslang_properties_get(dyslang::ResourceRefBase)
+        //dyslang_properties_get(dyslang::ResourceRefBase)
 #undef dyslang_properties_get
 
 #define dyslang_properties_set(TYPE) vbegin(void) set(dyslang::CString, const TYPE*, uint64_t) vend;
@@ -477,7 +477,7 @@ namespace dyslang
         dyslang_properties_set(dyslang::i64)
         dyslang_properties_set(dyslang::f32)
         dyslang_properties_set(dyslang::f64)
-        dyslang_properties_set(dyslang::ResourceRefBase)
+        //dyslang_properties_set(dyslang::ResourceRefBase)
 #undef dyslang_properties_set
 	};
 
@@ -581,24 +581,24 @@ struct Properties {
 #endif
     }
 
-	dyslang::ResourceRef<T> get<T : __IDynamicResourceCastable<__DynamicResourceKind::General>>(dyslang::CString key) {
-#ifdef __SLANG_CPP__
-        return dyslang::ResourceRef<T>(__private::get<dyslang::ResourceRefBase>(key, __properties)._idx);
-#else
-        return { {} };
-#endif
-    }
+//	dyslang::ResourceRef<T> get<T : __IDynamicResourceCastable<__DynamicResourceKind::General>>(dyslang::CString key) {
+//#ifdef __SLANG_CPP__
+//        return dyslang::ResourceRef<T>(__private::get<dyslang::ResourceRefBase>(key, __properties)._idx);
+//#else
+//        return { {} };
+//#endif
+//    }
 
     void set<T>(dyslang::CString key, T value) {
 #ifdef __SLANG_CPP__
         __private::set<T>(key, value, __properties);
 #endif
     }
-    void set<T : __IDynamicResourceCastable<__DynamicResourceKind::General>>(dyslang::CString key, dyslang::ResourceRef<T> value) {
-#ifdef __SLANG_CPP__
-        __private::set<dyslang::ResourceRefBase>(key, value, __properties);
-#endif
-    }
+//    void set<T : __IDynamicResourceCastable<__DynamicResourceKind::General>>(dyslang::CString key, dyslang::ResourceRef<T> value) {
+//#ifdef __SLANG_CPP__
+//        __private::set<dyslang::ResourceRefBase>(key, value, __properties);
+//#endif
+//    }
 
 };
 
@@ -606,13 +606,13 @@ struct Properties {
     struct Properties : public IProperties
     {
         using SupportedTypes = std::tuple<
+            //std::vector<dyslang::ResourceRefBase>,
 			std::vector<u32>,
 			std::vector<i32>,
 			std::vector<u64>,
 			std::vector<i64>,
             std::vector<f32>,
-            std::vector<f64>,
-            std::vector<dyslang::ResourceRefBase>
+            std::vector<f64>
         >;
         using VariantType = tuple_to_variant<SupportedTypes>::type;
         // We don't need queryInterface for this impl, or ref counting
@@ -635,7 +635,7 @@ struct Properties {
         dyslang_properties_get(dyslang::i64)
         dyslang_properties_get(dyslang::f32)
         dyslang_properties_get(dyslang::f64)
-        dyslang_properties_get(dyslang::ResourceRefBase)
+        //dyslang_properties_get(dyslang::ResourceRefBase)
 #undef dyslang_properties_get
 
 #define dyslang_properties_set(TYPE) vbegin(void) set(const dyslang::CString key, const TYPE* ptr, const uint64_t count) SLANG_OVERRIDE { properties[key] = std::vector<TYPE>{ ptr, ptr + count }; }
@@ -645,7 +645,7 @@ struct Properties {
         dyslang_properties_set(dyslang::i64)
     	dyslang_properties_set(dyslang::f32)
 		dyslang_properties_set(dyslang::f64)
-		dyslang_properties_set(dyslang::ResourceRefBase)
+		//dyslang_properties_set(dyslang::ResourceRefBase)
 #undef dyslang_properties_set
 
         template <typename T> void set(const dyslang::CString key, const T& data) { set(key, &data, 1); }
@@ -675,13 +675,13 @@ struct Properties {
                     using T = std::decay_t<decltype(arg)>;
                     if constexpr (is_arithmetic_v<T>)
                         result += std::to_string(arg);
-                    else if constexpr (std::is_same_v<std::vector<dyslang::ResourceRefBase>, T>) {
-                        std::string sep;
-                        for (const auto& v : arg) {
-                            result += sep + "ResourceRef{ index=" + std::to_string(v._idx) + " }";
-                            sep = ", ";
-                        }
-                    }
+                    //else if constexpr (std::is_same_v<std::vector<dyslang::ResourceRefBase>, T>) {
+                    //    std::string sep;
+                    //    for (const auto& v : arg) {
+                    //        result += sep + "ResourceRef{ index=" + std::to_string(v._idx) + " }";
+                    //        sep = ", ";
+                    //    }
+                    //}
                     else {
 						std::string sep;
                         for(const auto& v : arg) {

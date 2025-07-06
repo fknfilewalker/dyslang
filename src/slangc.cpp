@@ -53,11 +53,11 @@ Slangc::Slangc(const std::vector<const char*>& includes, const std::vector<Slang
     }
 
     std::vector<slang::CompilerOptionEntry> copts{
-        {slang::CompilerOptionName::VulkanUseEntryPointName, {slang::CompilerOptionValueKind::Int, 1}},
-        {slang::CompilerOptionName::StdRevision, {slang::CompilerOptionValueKind::String, 0, 0, "2026"}}
+        {.name = slang::CompilerOptionName::VulkanUseEntryPointName, .value = {slang::CompilerOptionValueKind::Int, 1}},
+        {.name = slang::CompilerOptionName::LanguageVersion, .value = {slang::CompilerOptionValueKind::Int, 2026}
         //{slang::CompilerOptionName::MinimumSlangOptimization, {slang::CompilerOptionValueKind::Int, 1} },
         //{slang::CompilerOptionName::DebugInformation, {slang::CompilerOptionValueKind::Int, SlangDebugInfoLevel::SLANG_DEBUG_INFO_LEVEL_MAXIMAL}}
-    };
+    }};
 
     slang::SessionDesc sessionDesc = {};
     slang::TargetDesc targetDesc = {};

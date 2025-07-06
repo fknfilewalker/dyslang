@@ -8,7 +8,7 @@ struct PointLight<Real : dyslang::floating_point> : IEmitter<Real> {
     vector<Real, 3> color;
     Real intensity;
     dyslang::m3x3<Real> transform;
-    dyslang::ResourceRef<Texture2D> texture;
+    // dyslang::ResourceRef<Texture2D> texture;
 
     __init(dyslang::Properties properties) {
         if (properties.has("id")) {
@@ -35,9 +35,9 @@ struct PointLight<Real : dyslang::floating_point> : IEmitter<Real> {
             transform = properties.get<dyslang::m3x3<Real>>("transform");
         } else transform = dyslang::m3x3<Real>(1.0);
 
-        if (properties.has("texture")) {
-            texture = properties.get<Texture2D>("texture");
-        }
+        // if (properties.has("texture")) {
+        //     texture = properties.get<Texture2D>("texture");
+        // }
     }
 
     void traverse(dyslang::Properties properties) {
@@ -47,7 +47,7 @@ struct PointLight<Real : dyslang::floating_point> : IEmitter<Real> {
         properties.set("color", color);
         properties.set("intensity", intensity);
         properties.set("transform", transform);
-        properties.set("texture", texture);
+        // properties.set("texture", texture);
         Real arr[10] = { Real(1.0), Real(2.0), Real(3.0), Real(4.0), Real(5.0), Real(6.0), Real(7.0), Real(8.0), Real(9.0), Real(10.0) };
         properties.set("arr_test", arr);
     }
@@ -56,8 +56,8 @@ struct PointLight<Real : dyslang::floating_point> : IEmitter<Real> {
         vector<Real, 3> dir = position - hit_pos_ws;
         const Real dist = length(dir);
         const Real att = Real(1.0) / (Real(1.0) + dist * dist);
-        const vector<Real, 3> emission = vector<Real, 4>(no_diff texture.get().Load(int3(0, 0, 0))).xyz;
-        return color * intensity * att * emission * max(dot(normal_ws, normalize(dir)), Real(0.0));
+        //const vector<Real, 3> emission = vector<Real, 4>(no_diff texture.get().Load(int3(0, 0, 0))).xyz;
+        return color * intensity * att * /*emission **/ max(dot(normal_ws, normalize(dir)), Real(0.0));
     }
 
     [Differentiable] vector<Real, 3> sample() { return position; }

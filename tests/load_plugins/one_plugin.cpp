@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
     	0.0f, 1.0, 0.0,
     	0.0f, 0.0, 1.0
     });
-    props_in.set("texture", dyslang::ResourceRef{ 1 });
+    //props_in.set("texture", dyslang::ResourceRef{ 1 });
     std::cout << "IN:" << props_in.to_string() << '\n';
 
     // create object

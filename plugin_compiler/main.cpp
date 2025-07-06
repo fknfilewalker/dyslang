@@ -71,7 +71,7 @@ Slang::ComPtr<slang::IBlob> compileSlangModule(const Slang::ComPtr<slang::IGloba
 {
     const std::vector includes = { source.path.c_str() };
     std::vector<slang::CompilerOptionEntry> copts{
-        {slang::CompilerOptionName::StdRevision, {slang::CompilerOptionValueKind::String, 0, 0, "2026"}}
+        {.name = slang::CompilerOptionName::LanguageVersion, .value = {slang::CompilerOptionValueKind::Int, 2026}}
     };
 
     Slang::ComPtr<slang::ISession> session;
@@ -109,6 +109,7 @@ std::vector<std::string> split(const std::string& s, char delim) {
     return result;
 }
 
+// -D__DYSLANG_VARIANTS__="(float_rgb,(<float>))"
 std::string create_variant_define(std::string variants) {
     std::erase_if(variants, isspace);
     auto variant_list = split(variants, ';');
