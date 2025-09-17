@@ -43,5 +43,8 @@ add_target(load_plugins_two DEPS ${DYSLANG_LIBRARY}
 add_target(annotation_rtti DEPS ${DYSLANG_LIBRARY}
     SOURCES "annotation_rtti/main.cpp" "annotation_rtti/rtti.slang"
 )
+add_target(dyslang2 DEPS ${DYSLANG_LIBRARY}
+    SOURCES "dyslang2/main.cpp" "dyslang2/script.slang"
+)
 dyslang_copy_plugins(load_plugins_one plugins)
 dyslang_copy_plugins(load_plugins_two plugins)

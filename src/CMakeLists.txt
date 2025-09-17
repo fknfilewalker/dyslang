@@ -2,6 +2,7 @@ add_library(${DYSLANG_LIBRARY} STATIC
     ${DYSLANG_INCLUDE_DIR}/dyslang/dyslang.h
     ${DYSLANG_INCLUDE_DIR}/dyslang/slangc.h slangc.cpp 
     ${DYSLANG_INCLUDE_DIR}/dyslang/plugin.h plugin.cpp 
+    ${DYSLANG_INCLUDE_DIR}/dyslang/dyslang2.h dyslang2.cpp 
     # ${DYSLANG_INCLUDE_DIR}/dyslang/properties.h 
     ${DYSLANG_INCLUDE_DIR}/dyslang/platform.h)
 
