@@ -10,8 +10,6 @@
 
 using namespace dyslang;
 namespace {
-    thread_local Slang::ComPtr<slang::IGlobalSession> globalSession;
-
     void checkError(slang::IBlob* diagnosticsBlob)
     {
         if (diagnosticsBlob != nullptr)
@@ -48,26 +46,27 @@ struct Slangc::SlangcPrivate
 
 Slangc::Slangc(const std::vector<const char*>& includes, const std::vector<Slangc::ArgPair>& defines) : _p{ new SlangcPrivate() }
 {
-    if (!globalSession) {
-        if (SLANG_FAILED(slang::createGlobalSession(globalSession.writeRef()))) throw std::runtime_error("slang: error creating global session");
+    if (!slangGlobalSession) {
+        if (SLANG_FAILED(slang::createGlobalSession(slangGlobalSession.writeRef()))) throw std::runtime_error("slang: error creating global session");
     }
 
     std::vector<slang::CompilerOptionEntry> copts{
         {.name = slang::CompilerOptionName::VulkanUseEntryPointName, .value = {slang::CompilerOptionValueKind::Int, 1}},
-        {.name = slang::CompilerOptionName::LanguageVersion, .value = {slang::CompilerOptionValueKind::Int, 2026}
+        {.name = slang::CompilerOptionName::LanguageVersion, .value = {slang::CompilerOptionValueKind::Int, 2026}},
+		{.name = slang::CompilerOptionName::EnableExperimentalDynamicDispatch, .value = {slang::CompilerOptionValueKind::Int, 1}}
         //{slang::CompilerOptionName::MinimumSlangOptimization, {slang::CompilerOptionValueKind::Int, 1} },
         //{slang::CompilerOptionName::DebugInformation, {slang::CompilerOptionValueKind::Int, SlangDebugInfoLevel::SLANG_DEBUG_INFO_LEVEL_MAXIMAL}}
-    }};
+    };
 
     slang::SessionDesc sessionDesc = {};
     slang::TargetDesc targetDesc = {};
     if (true) {
         targetDesc.format = SLANG_GLSL;
-        targetDesc.profile = globalSession->findProfile("glsl460");
+        targetDesc.profile = slangGlobalSession->findProfile("glsl460");
     }
     else {
         targetDesc.format = SLANG_SPIRV;
-        targetDesc.profile = globalSession->findProfile("spirv_1_5");
+        targetDesc.profile = slangGlobalSession->findProfile("spirv_1_5");
         targetDesc.flags = SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY;
     }
     sessionDesc.targets = &targetDesc;
@@ -80,7 +79,7 @@ Slangc::Slangc(const std::vector<const char*>& includes, const std::vector<Slang
     sessionDesc.preprocessorMacroCount = static_cast<SlangInt>(defines.size());
     sessionDesc.preprocessorMacros = reinterpret_cast<const slang::PreprocessorMacroDesc*>(defines.data());
 
-    if (SLANG_FAILED(globalSession->createSession(sessionDesc, _p->_session.writeRef()))) throw std::runtime_error("slang: error creating session");
+    if (SLANG_FAILED(slangGlobalSession->createSession(sessionDesc, _p->_session.writeRef()))) throw std::runtime_error("slang: error creating session");
 }
 
 Slangc::~Slangc()

@@ -144,8 +144,8 @@ namespace dyslang2
         Slang::ComPtr<slang::IGlobalSession> slangSession;
         slangSession.attach(spCreateSession(nullptr));
 
-        if (!slangGlobalSession) {
-            if (SLANG_FAILED(slang::createGlobalSession(slangGlobalSession.writeRef()))) throw std::runtime_error("slang: error creating global session");
+        if (!dyslang::slangGlobalSession) {
+            if (SLANG_FAILED(slang::createGlobalSession(dyslang::slangGlobalSession.writeRef()))) throw std::runtime_error("slang: error creating global session");
         }
 
         std::vector<slang::CompilerOptionEntry> copts{
@@ -153,17 +153,20 @@ namespace dyslang2
             {.name = slang::CompilerOptionName::EnableExperimentalDynamicDispatch, .value = {slang::CompilerOptionValueKind::Int, 1}}
         };
 
-        slang::TargetDesc targetDesc = {};
-        targetDesc.format = SLANG_SHADER_SHARED_LIBRARY;
+        std::array<slang::TargetDesc, 1> targetDesc = {};
+        targetDesc[0].format = SLANG_SHADER_SHARED_LIBRARY;
+        //targetDesc[1].format = SLANG_SPIRV;
+        //targetDesc[1].profile = slangGlobalSession->findProfile("spirv_1_5");
+        //targetDesc[1].flags = SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY;
 
         slang::SessionDesc sessionDesc = {};
-        sessionDesc.targets = &targetDesc;
-        sessionDesc.targetCount = 1;
+        sessionDesc.targets = targetDesc.data();
+        sessionDesc.targetCount = targetDesc.size();
         sessionDesc.compilerOptionEntries = copts.data();
         sessionDesc.compilerOptionEntryCount = static_cast<uint32_t>(copts.size());
 
         Slang::ComPtr<slang::ISession> _session;
-        if (SLANG_FAILED(slangGlobalSession->createSession(sessionDesc, _session.writeRef()))) throw std::runtime_error("slang: error creating session");
+        if (SLANG_FAILED(dyslang::slangGlobalSession->createSession(sessionDesc, _session.writeRef()))) throw std::runtime_error("slang: error creating session");
 
         Slang::ComPtr<slang::ICompileRequest> request;
         _session->createCompileRequest(request.writeRef());
@@ -190,9 +193,13 @@ namespace dyslang2
         if (auto diagnostics = request->getDiagnosticOutput())
             printf("%s", diagnostics);
 
-        Slang::ComPtr<slang::IBlob> diagnosticsBlob;
         {
             SlangResult _res = request->getTargetHostCallable(0, _library.writeRef());
+            if (SLANG_FAILED(_res))
+            {
+                assert(false);
+            }
+            _res = request->getModule(translationUnitIndex, _module.writeRef());
             if (SLANG_FAILED(_res))
             {
                 assert(false);

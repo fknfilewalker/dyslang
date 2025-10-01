@@ -15,8 +15,6 @@
 
 namespace dyslang2
 {
-    thread_local static Slang::ComPtr<slang::IGlobalSession> slangGlobalSession;
-
     template <typename T>
     concept integral = std::integral<T>;
     template <typename T>
@@ -192,5 +190,6 @@ namespace dyslang2
         std::function<uint32_t(void)> _sizeFunc, _dynamicSizeFunc;
         std::function<void(uint8_t*, IProperties *)> _traverseFunc;
         Slang::ComPtr<ISlangSharedLibrary> _library;
+        Slang::ComPtr<slang::IModule> _module;
     };
 }

@@ -1,9 +1,13 @@
 #pragma once
 #include <string>
 #include <memory>
+#include <slang-com-ptr.h>
+#include <slang.h>
 #include <vector>
 
 namespace dyslang {
+	thread_local static Slang::ComPtr<slang::IGlobalSession> slangGlobalSession;
+
 	struct Slangc
 	{
 		using ArgPair = std::pair<const char*, const char*>; // <Name, Value>
