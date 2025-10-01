@@ -140,19 +140,16 @@ namespace dyslang2
 
         std::string source = iprops + getter + setter + props + "\n\
         void __memcpy<T>(Ptr<void> ptr, T data, uint size) { __intrinsic_asm R\"(memcpy($0, &$1, $2))\"; }\n\
-		export __extern_cpp uint __size() { return sizeof(" +
-                             name + "); }\n\
-    	export __extern_cpp void __init(Ptr<void> ptr) { __memcpy(ptr, " +
-                             name + "(), __size()); }\n\
+		export __extern_cpp uint __size() { return sizeof(" + name + "); }\n\
+    	export __extern_cpp void __init(Ptr<" + name + "> ptr) { *ptr = " + name + "(); }\n\
 		export __extern_cpp void __traverse(Ptr<void> ptr, IPropertiesInternal props) { ((" +
                              name + "*)ptr)->traverse(Properties(props)); }\n";
 
         std::string interface = "IEmitter<float>";
         source += "\
-        export __extern_cpp uint __sizeDynamic() { return sizeof(" +
-                  interface + "); }\n\
-		export __extern_cpp void __initDynamic(Ptr<void> ptr, uint typeID) { __memcpy(ptr, createDynamicObject<" +
-                  interface + ", " + name + ">(typeID, " + name + "()), __sizeDynamic()); }\n";
+        export __extern_cpp uint __sizeDynamic() { return sizeof(" + interface + "); }\n\
+		export __extern_cpp void __initDynamic(Ptr<"+ interface +"> ptr, uint typeID) { *ptr = createDynamicObject<" +
+                  interface + ", " + name + ">(typeID, " + name + "()); }\n";
 
         request->addTranslationUnitSourceString(translationUnitIndex, "__internal", source.c_str());
 
