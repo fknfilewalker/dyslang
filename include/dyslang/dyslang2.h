@@ -156,7 +156,7 @@ namespace dyslang2
         /*DynamicObject instantiate();*/
 
         std::function<uint32_t()> sizeFunc;
-        std::function<void(void *)> initFunc;
+        std::function<void(void *, IProperties *)> initFunc;
         std::function<void(void *, IProperties *)> traverseFunc;
     };
 }

@@ -141,15 +141,15 @@ namespace dyslang2
         std::string source = iprops + getter + setter + props + "\n\
         void __memcpy<T>(Ptr<void> ptr, T data, uint size) { __intrinsic_asm R\"(memcpy($0, &$1, $2))\"; }\n\
 		export __extern_cpp uint __size() { return sizeof(" + name + "); }\n\
-    	export __extern_cpp void __init(Ptr<" + name + "> ptr) { *ptr = " + name + "(); }\n\
+    	export __extern_cpp void __init(Ptr<" + name + "> ptr, IPropertiesInternal props) { *ptr = " + name + "(Properties(props)); }\n\
 		export __extern_cpp void __traverse(Ptr<void> ptr, IPropertiesInternal props) { ((" +
                              name + "*)ptr)->traverse(Properties(props)); }\n";
 
         std::string interface = "IEmitter<float>";
         source += "\
         export __extern_cpp uint __sizeDynamic() { return sizeof(" + interface + "); }\n\
-		export __extern_cpp void __initDynamic(Ptr<"+ interface +"> ptr, uint typeID) { *ptr = createDynamicObject<" +
-                  interface + ", " + name + ">(typeID, " + name + "()); }\n";
+		export __extern_cpp void __initDynamic(Ptr<"+ interface +"> ptr, IPropertiesInternal props, uint typeID) { *ptr = createDynamicObject<" +
+                  interface + ", " + name + ">(typeID, " + name + "(Properties(props))); }\n";
 
         request->addTranslationUnitSourceString(translationUnitIndex, "__internal", source.c_str());
 
@@ -168,21 +168,25 @@ namespace dyslang2
         auto sizeDynamicFunc = (uint32_t (*)(void))sharedLibrary->findFuncByName("__sizeDynamic");
         const uint32_t sizeDynamic = sizeDynamicFunc();
 
-        initFunc = (void (*)(void *))sharedLibrary->findFuncByName("__init");
-        std::vector<uint8_t> data(size);
-        initFunc(data.data());
-
-        auto initDynamicFunc = (void (*)(void *, uint32_t))sharedLibrary->findFuncByName("__initDynamic");
-        std::vector<uint8_t> dataDynamic(sizeDynamic);
-        initDynamicFunc(dataDynamic.data(), 6);
-
         Properties props;
         int a = 47;
+		std::vector<float> b = { 1.0f, 2.0f, 3.0f };
+        
         props.set("x", &a);
-        std::printf("%s", props.to_string().c_str());
+		props.set("b", &b);
+        std::printf("Init %s", props.to_string().c_str());
+
+        initFunc = (void (*)(void *, IProperties*))sharedLibrary->findFuncByName("__init");
+        std::vector<uint8_t> data(size);
+        initFunc(data.data(), &props);
+
+        auto initDynamicFunc = (void (*)(void *, IProperties*, uint32_t))sharedLibrary->findFuncByName("__initDynamic");
+        std::vector<uint8_t> dataDynamic(sizeDynamic);
+        initDynamicFunc(dataDynamic.data(), &props, 6);
+
         traverseFunc = (void (*)(void *, IProperties *))sharedLibrary->findFuncByName("__traverse");
         traverseFunc(data.data(), &props);
-        std::printf("%s", props.to_string().c_str());
+        std::printf("Traverse %s", props.to_string().c_str());
 
         auto vi = props.get<int>("x");
         auto v = props.get<std::vector<float>>("b");

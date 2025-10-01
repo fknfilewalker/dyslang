@@ -19,7 +19,7 @@ struct Point<Real : __BuiltinFloatingPointType>  {
     int arr[3];
     //StaticArray<float> profile;
 
-    __init() {
+    __init(IProperties p) {
         x = 2;
         y = 3;
         a = 4.0;
@@ -27,6 +27,9 @@ struct Point<Real : __BuiltinFloatingPointType>  {
         arr[0] = 1;
         arr[1] = 2;
         arr[2] = 3;
+
+        x = p.get<int>("x");
+        b = p.get<vector<Real, 3>>("b");
     }
 
     [mutating, require(cpp)]
@@ -40,8 +43,6 @@ struct Point<Real : __BuiltinFloatingPointType>  {
         if (!p.has("b")) {
             p.set("b", &b);
         }
-        x = p.get<int>("x");
-        b = p.get<vector<Real, 3>>("b");
     }
 
     int emit() {
