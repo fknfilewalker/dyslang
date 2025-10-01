@@ -89,6 +89,6 @@ struct Point2<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
     }
 }
 
-//[DllExport] void emit(Ptr<void> ptr, Ref<IProperties> props) { 
-//    Point<float>().traverse(props); 
-//}
+export __extern_cpp int emit() {
+    return 34;
+}

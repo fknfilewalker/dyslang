@@ -7,6 +7,7 @@
 #include <functional>
 #include <span>
 #include <any>
+#include <optional>
 #include <slang.h>
 #include <slang-com-ptr.h>
 #include <slang-com-helper.h>
@@ -155,20 +156,29 @@ namespace dyslang2
         void traverse(IProperties&);
         Properties traverse();
 
+        template <typename R, typename ...Args>
+        std::function<R(Args...)> loadFunction(const char* name)
+        {
+            typedef R(*FuncPtr)(Args...);
+            return reinterpret_cast<FuncPtr>(_library->findFuncByName(name));
+        }
+
         std::vector<uint8_t> data;
         std::function<void(uint8_t*, IProperties *)> traverseFunc;
-        Slang::ComPtr<ISlangSharedLibrary> library;
+        Slang::ComPtr<ISlangSharedLibrary> _library;
     };
 
     struct DynamicClass
     {
         DynamicClass(std::string filepath, std::string classname, std::string interfacename = "");
-        DynamicObject init(IProperties&, uint32_t = -1);
+        DynamicObject init(IProperties&);
         size_t size() const;
+        bool has_interface() const;
 
         std::string _filepath, _classname, _interfacename;
-        std::function<uint32_t(void)> sizeFunc, dynamicSizeFunc;
-        std::function<void(uint8_t*, IProperties *)> traverseFunc;
-        Slang::ComPtr<ISlangSharedLibrary> library;
+        std::optional<uint32_t> _id;
+        std::function<uint32_t(void)> _sizeFunc, _dynamicSizeFunc;
+        std::function<void(uint8_t*, IProperties *)> _traverseFunc;
+        Slang::ComPtr<ISlangSharedLibrary> _library;
     };
 }

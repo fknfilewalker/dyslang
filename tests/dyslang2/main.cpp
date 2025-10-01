@@ -20,12 +20,13 @@ int main(int argc, char *argv[])
     auto p_in = Properties().set("x", &a).set("b", &b).print();
 
     DynamicClass c("tests/dyslang2/script.slang", "Point2<float>", "IEmitter<float>");
-    DynamicObject o = c.init(p_in, 3);
+    DynamicObject o = c.init(p_in);
     Properties p_out = o.traverse();
     p_out.print();
 
     auto vi = p_out.get<int>("x");
     auto v = p_out.get<std::vector<float>>("b");
 
+    int res = o.loadFunction<int>("emit")();
     return 0;
 }
