@@ -1,6 +1,7 @@
 #include <functional>
 #include <dyslang/dyslang2.h>
 #include <slang.h>
+#include <dyslang/slangc.h>
 
 namespace dyslang2
 {
@@ -137,23 +138,33 @@ namespace dyslang2
     DynamicClass::DynamicClass(std::string filepath, std::string classname, std::string interfacename) :
         _filepath{ std::move(filepath) }, _classname{ std::move(classname) }, _interfacename{ std::move(interfacename) } {
 
-        static uint32_t globalID = 0;
+        static uint32_t globalID = 1;
         if (has_interface()) _id = globalID++;
 
         Slang::ComPtr<slang::IGlobalSession> slangSession;
         slangSession.attach(spCreateSession(nullptr));
 
-        Slang::ComPtr<slang::ICompileRequest> request;
-        {
-            SlangResult _res = slangSession->createCompileRequest(request.writeRef());
-            if (SLANG_FAILED(_res))
-            {
-                assert(false);
-            }
+        if (!slangGlobalSession) {
+            if (SLANG_FAILED(slang::createGlobalSession(slangGlobalSession.writeRef()))) throw std::runtime_error("slang: error creating global session");
         }
 
-        const int targetIndex = request->addCodeGenTarget(SLANG_SHADER_HOST_CALLABLE);
-        request->setTargetFlags(targetIndex, SLANG_TARGET_FLAG_GENERATE_WHOLE_PROGRAM);
+        std::vector<slang::CompilerOptionEntry> copts{{.name = slang::CompilerOptionName::LanguageVersion, .value = {slang::CompilerOptionValueKind::Int, 2018}}};
+
+        slang::TargetDesc targetDesc = {};
+        targetDesc.format = SLANG_SHADER_SHARED_LIBRARY;
+
+        slang::SessionDesc sessionDesc = {};
+        sessionDesc.targets = &targetDesc;
+        sessionDesc.targetCount = 1;
+        sessionDesc.compilerOptionEntries = copts.data();
+        sessionDesc.compilerOptionEntryCount = static_cast<uint32_t>(copts.size());
+
+        Slang::ComPtr<slang::ISession> _session;
+        if (SLANG_FAILED(slangGlobalSession->createSession(sessionDesc, _session.writeRef()))) throw std::runtime_error("slang: error creating session");
+
+        Slang::ComPtr<slang::ICompileRequest> request;
+        _session->createCompileRequest(request.writeRef());
+        request->setTargetFlags(0, SLANG_TARGET_FLAG_GENERATE_WHOLE_PROGRAM);
         const int translationUnitIndex = request->addTranslationUnit(SLANG_SOURCE_LANGUAGE_SLANG, nullptr);
         request->addTranslationUnitSourceFile(translationUnitIndex, _filepath.c_str());
 

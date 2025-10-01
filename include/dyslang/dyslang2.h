@@ -2,6 +2,7 @@
 #include <map>
 #include <stdexcept>
 #include <string>
+#include <array>
 #include <variant>
 #include <vector>
 #include <functional>
@@ -14,6 +15,8 @@
 
 namespace dyslang2
 {
+    thread_local static Slang::ComPtr<slang::IGlobalSession> slangGlobalSession;
+
     template <typename T>
     concept integral = std::integral<T>;
     template <typename T>
@@ -62,6 +65,8 @@ namespace dyslang2
 
         void *SLANG_MCALL get(const char *key, uint64_t *count) SLANG_OVERRIDE
         {
+            if (!properties.contains(key))
+                throw std::runtime_error("Property not found: " + std::string(key));
             auto &value = properties[key];
             *count = properties[key].dimension[0];
             return &properties[key].values;
@@ -98,6 +103,13 @@ namespace dyslang2
 			set(key, &a, data->size());
             return *this;
 		}
+        template <typename T, size_t N>
+        Properties& set(const char* key, std::array<T, N>* data)
+        {
+            std::any a = data->data();
+            set(key, &a, N);
+            return *this;
+        }
         // template <typename T, size_t N>
         // void set(const char *key, const std::array<T, N> &data) { set(key, data.data(), N); }
         //  template <arithmetic T, std::size_t M, std::size_t N> void set(const char* key, const dyslang::matrix<T, M, N>& data) { set(key, data.data(), M * N); }

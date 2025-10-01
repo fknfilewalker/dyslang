@@ -68,6 +68,7 @@ struct Point2<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         arr[2] = 3;
 
         x = p.get<int>("x");
+        //y = p.get<int>("y");
         b = p.get<vector<Real, 3>>("b");
     }
 
