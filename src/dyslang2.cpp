@@ -96,7 +96,7 @@ namespace dyslang2
             Ptr<void> get(NativeString, uint64_t*);
 		};
 	)";
-    static const std::string props = R"(
+    static const std::string s_props = R"(
 		struct Properties : IProperties {
 	        private IPropertiesInternal __properties;
 	        __init(IPropertiesInternal properties) {
@@ -122,35 +122,51 @@ namespace dyslang2
         }
     }
 
-    DynamicClass::DynamicClass(const std::string &filename, const std::string &name)
+    void DynamicObject::traverse(IProperties& props)
     {
+        traverseFunc(data.data(), &props);
+    }
+
+    Properties DynamicObject::traverse()
+    {
+        Properties props;
+        traverse(props);
+        return props;
+    }
+
+    DynamicClass::DynamicClass(std::string filepath, std::string classname, std::string interfacename) :
+        _filepath{ std::move(filepath) }, _classname{ std::move(classname) }, _interfacename{ std::move(interfacename) } {
+
         Slang::ComPtr<slang::IGlobalSession> slangSession;
         slangSession.attach(spCreateSession(nullptr));
 
         Slang::ComPtr<slang::ICompileRequest> request;
-        SLANG_RETURN_VOID_ON_FAIL(slangSession->createCompileRequest(request.writeRef()))
+        {
+            SlangResult _res = slangSession->createCompileRequest(request.writeRef());
+            if (SLANG_FAILED(_res))
+            {
+                assert(false);
+            }
+        }
 
         const int targetIndex = request->addCodeGenTarget(SLANG_SHADER_HOST_CALLABLE);
         request->setTargetFlags(targetIndex, SLANG_TARGET_FLAG_GENERATE_WHOLE_PROGRAM);
-
         const int translationUnitIndex = request->addTranslationUnit(SLANG_SOURCE_LANGUAGE_SLANG, nullptr);
+        request->addTranslationUnitSourceFile(translationUnitIndex, _filepath.c_str());
 
-        // Set the source file for the translation unit
-        request->addTranslationUnitSourceFile(translationUnitIndex, filename.c_str());
-
-        std::string source = iprops + getter + setter + props + "\n\
+        std::string source = iprops + getter + setter + s_props + "\n\
         void __memcpy<T>(Ptr<void> ptr, T data, uint size) { __intrinsic_asm R\"(memcpy($0, &$1, $2))\"; }\n\
-		export __extern_cpp uint __size() { return sizeof(" + name + "); }\n\
-    	export __extern_cpp void __init(Ptr<" + name + "> ptr, IPropertiesInternal props) { *ptr = " + name + "(Properties(props)); }\n\
-		export __extern_cpp void __traverse(Ptr<void> ptr, IPropertiesInternal props) { ((" +
-                             name + "*)ptr)->traverse(Properties(props)); }\n";
+		export __extern_cpp uint __size() { return sizeof(" + _classname + "); }\n\
+    	export __extern_cpp void __init(Ptr<" + _classname + "> ptr, IPropertiesInternal props) { *ptr = " + _classname + "(Properties(props)); }\n\
+		export __extern_cpp void __traverse(Ptr<uint8_t> ptr, IPropertiesInternal props) { ((" + _classname + "*)ptr)->traverse(Properties(props)); }\n";
 
-        std::string interface = "IEmitter<float>";
-        source += "\
-        export __extern_cpp uint __sizeDynamic() { return sizeof(" + interface + "); }\n\
-		export __extern_cpp void __initDynamic(Ptr<"+ interface +"> ptr, IPropertiesInternal props, uint typeID) { *ptr = createDynamicObject<" +
-                  interface + ", " + name + ">(typeID, " + name + "(Properties(props))); }\n";
-
+        if (!_interfacename.empty()) {
+            source += "\
+                export __extern_cpp uint __sizeDynamic() { return sizeof(" + _interfacename + "); }\n\
+		        export __extern_cpp void __initDynamic(Ptr<" + _interfacename + "> ptr, IPropertiesInternal props, uint typeID) { *ptr = createDynamicObject<" +
+                _interfacename + ", " + _classname + ">(typeID, " + _classname + "(Properties(props))); }\n\
+                export __extern_cpp void __traverseDynamic(Ptr<uint8_t> ptr, IPropertiesInternal props) { ((" + _classname + "*)(ptr+16))->traverse(Properties(props)); }\n";
+        }
         request->addTranslationUnitSourceString(translationUnitIndex, "__internal", source.c_str());
 
         const SlangResult compileRes = request->compile();
@@ -158,39 +174,45 @@ namespace dyslang2
             printf("%s", diagnostics);
 
         Slang::ComPtr<slang::IBlob> diagnosticsBlob;
+        {
+            SlangResult _res = request->getTargetHostCallable(0, library.writeRef());
+            if (SLANG_FAILED(_res))
+            {
+                assert(false);
+            }
+        }
+    }
 
-        Slang::ComPtr<ISlangSharedLibrary> sharedLibrary;
-        SLANG_RETURN_VOID_ON_FAIL(request->getTargetHostCallable(0, sharedLibrary.writeRef()))
+    DynamicObject DynamicClass::init(IProperties& props, uint32_t id)
+    {
+        if (!_interfacename.empty()) assert(id != static_cast<uint32_t>(-1));
+        else assert(id == static_cast<uint32_t>(-1));
 
-        sizeFunc = (uint32_t (*)(void))sharedLibrary->findFuncByName("__size");
-        const uint32_t size = sizeFunc();
+        sizeFunc = (uint32_t(*)(void))library->findFuncByName("__size");
+        dynamicSizeFunc = (uint32_t(*)(void))library->findFuncByName("__sizeDynamic");
 
-        auto sizeDynamicFunc = (uint32_t (*)(void))sharedLibrary->findFuncByName("__sizeDynamic");
-        const uint32_t sizeDynamic = sizeDynamicFunc();
+        void (*add_ptr)() = library->findFuncByName("add");
 
-        Properties props;
-        int a = 47;
-		std::vector<float> b = { 1.0f, 2.0f, 3.0f };
-        
-        props.set("x", &a);
-		props.set("b", &b);
-        std::printf("Init %s", props.to_string().c_str());
+        if (_interfacename.empty())
+        {
+            std::vector<uint8_t> data(sizeFunc());
+            std::function<void(uint8_t*, IProperties*)> initFunc = (void (*)(uint8_t*, IProperties*))library->findFuncByName("__init");
+            initFunc(data.data(), &props);
+            traverseFunc = (void (*)(uint8_t*, IProperties*))library->findFuncByName("__traverse");
+            return { .data = data, .traverseFunc = traverseFunc, .library = library };
+        } else
+        {
+            auto initDynamicFunc = (void (*)(uint8_t*, IProperties*, uint32_t))library->findFuncByName("__initDynamic");
+            std::vector<uint8_t> dataDynamic(dynamicSizeFunc());
+            initDynamicFunc(dataDynamic.data(), &props, id);
+            traverseFunc = (void (*)(uint8_t*, IProperties*))library->findFuncByName("__traverseDynamic");
+            return { .data = dataDynamic, .traverseFunc = traverseFunc, .library = library };
+        }
+    }
 
-        initFunc = (void (*)(void *, IProperties*))sharedLibrary->findFuncByName("__init");
-        std::vector<uint8_t> data(size);
-        initFunc(data.data(), &props);
-
-        auto initDynamicFunc = (void (*)(void *, IProperties*, uint32_t))sharedLibrary->findFuncByName("__initDynamic");
-        std::vector<uint8_t> dataDynamic(sizeDynamic);
-        initDynamicFunc(dataDynamic.data(), &props, 6);
-
-        traverseFunc = (void (*)(void *, IProperties *))sharedLibrary->findFuncByName("__traverse");
-        traverseFunc(data.data(), &props);
-        std::printf("Traverse %s", props.to_string().c_str());
-
-        auto vi = props.get<int>("x");
-        auto v = props.get<std::vector<float>>("b");
-
-        void (*add_ptr)() = sharedLibrary->findFuncByName("add");
+    size_t DynamicClass::size() const
+    {
+        if (_interfacename.empty()) return sizeFunc();
+        else return dynamicSizeFunc();
     }
 }

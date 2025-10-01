@@ -84,16 +84,18 @@ namespace dyslang2
         }
 
         template <typename T>
-        void set(const char *key, T *data)
+        Properties& set(const char *key, T *data)
         {
             std::any a = data;
             set(key, &a, 1);
+            return *this;
         }
 		template <typename T>
-		void set(const char *key, std::vector<T>* data) 
+        Properties& set(const char *key, std::vector<T>* data)
 		{
 			std::any a = data->data();
 			set(key, &a, data->size());
+            return *this;
 		}
         // template <typename T, size_t N>
         // void set(const char *key, const std::array<T, N> &data) { set(key, data.data(), N); }
@@ -135,6 +137,12 @@ namespace dyslang2
             }
             return result;
         }
+        Properties& print()
+        {
+            std::printf("%s\n", to_string().c_str());
+            return *this;
+        }
+
         struct cmp_str
         {
             bool operator()(char const *a, char const *b) const { return std::strcmp(a, b) < 0; }
@@ -144,19 +152,23 @@ namespace dyslang2
 
     struct DynamicObject
     {
-        void traverse();
+        void traverse(IProperties&);
+        Properties traverse();
 
         std::vector<uint8_t> data;
-        std::function<void(void *, IProperties *)> traverseFunc;
+        std::function<void(uint8_t*, IProperties *)> traverseFunc;
+        Slang::ComPtr<ISlangSharedLibrary> library;
     };
 
     struct DynamicClass
     {
-        DynamicClass(const std::string &filename, const std::string &name);
-        /*DynamicObject instantiate();*/
+        DynamicClass(std::string filepath, std::string classname, std::string interfacename = "");
+        DynamicObject init(IProperties&, uint32_t = -1);
+        size_t size() const;
 
-        std::function<uint32_t()> sizeFunc;
-        std::function<void(void *, IProperties *)> initFunc;
-        std::function<void(void *, IProperties *)> traverseFunc;
+        std::string _filepath, _classname, _interfacename;
+        std::function<uint32_t(void)> sizeFunc, dynamicSizeFunc;
+        std::function<void(uint8_t*, IProperties *)> traverseFunc;
+        Slang::ComPtr<ISlangSharedLibrary> library;
     };
 }
