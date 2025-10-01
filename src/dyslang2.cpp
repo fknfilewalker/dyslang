@@ -148,7 +148,10 @@ namespace dyslang2
             if (SLANG_FAILED(slang::createGlobalSession(slangGlobalSession.writeRef()))) throw std::runtime_error("slang: error creating global session");
         }
 
-        std::vector<slang::CompilerOptionEntry> copts{{.name = slang::CompilerOptionName::LanguageVersion, .value = {slang::CompilerOptionValueKind::Int, 2018}}};
+        std::vector<slang::CompilerOptionEntry> copts{
+            {.name = slang::CompilerOptionName::LanguageVersion, .value = {slang::CompilerOptionValueKind::Int, 2026}},
+            {.name = slang::CompilerOptionName::EnableExperimentalDynamicDispatch, .value = {slang::CompilerOptionValueKind::Int, 1}}
+        };
 
         slang::TargetDesc targetDesc = {};
         targetDesc.format = SLANG_SHADER_SHARED_LIBRARY;
