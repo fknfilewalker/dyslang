@@ -189,7 +189,7 @@ namespace dyslang2
     DynamicObject DynamicClass::init(IProperties& props)
     {
         if (!_interfacename.empty()) assert(_id != static_cast<uint32_t>(-1));
-        else assert(_id == static_cast<uint32_t>(-1));
+        else assert(!_id);
 
         _sizeFunc = (uint32_t(*)(void))_library->findFuncByName("__size");
         _dynamicSizeFunc = (uint32_t(*)(void))_library->findFuncByName("__sizeDynamic");
