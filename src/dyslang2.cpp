@@ -204,6 +204,33 @@ namespace dyslang2
             {
                 assert(false);
             }
+
+            if (!_interfacename.empty()) {
+                slang::ProgramLayout* layout = _module->getLayout();
+                slang::TypeReflection* it = layout->findTypeByName(_interfacename.c_str());
+                slang::TypeReflection* ct = layout->findTypeByName(_classname.c_str());
+
+                Slang::ComPtr<ISlangBlob> diagnosticsBlob;
+                Slang::ComPtr<slang::ITypeConformance> t_c;
+                SlangResult result = _session->createTypeConformanceComponentType(
+                    ct,
+                    it,
+                    t_c.writeRef(),
+                    _id.value(),
+                    diagnosticsBlob.writeRef());
+                checkError(diagnosticsBlob);
+                if (SLANG_FAILED(result)) throw std::runtime_error("slang: type conformance error");
+
+                std::array<slang::IComponentType*, 2> list = { _module, t_c };
+                Slang::ComPtr<slang::IComponentType> tempProgram;
+                result = _session->createCompositeComponentType(
+                    list.data(),
+                    list.size(),
+                    tempProgram.writeRef(),
+                    diagnosticsBlob.writeRef());
+                checkError(diagnosticsBlob);
+                if (SLANG_FAILED(result)) throw std::runtime_error("slang: composition error");
+            }
         }
     }
 
