@@ -9,7 +9,8 @@ int main(int argc, char *argv[])
 
     int x = 47;
     std::array<float, 3> b = { 1.0f, 2.0f, 3.0f };
-    auto p_in = Properties().set("x", &x).set("b", &b).print();
+    std::array<int, 3> ints = { 1, 2, 3 };
+    auto p_in = Properties().set("x", &x).set("b", &b).set("ints", &ints).print();
 
     DynamicClass c("tests/dyslang2/script.slang", "Point2<float>", "IEmitter<float>");
     DynamicObject o = c.init(p_in);

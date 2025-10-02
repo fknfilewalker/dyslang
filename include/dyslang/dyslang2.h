@@ -84,7 +84,7 @@ namespace dyslang2
             uint64_t c;
             std::any& a = *static_cast<std::any*>(get(key, &c));
             assert(c != 1);
-            return T( std::any_cast<float*>(a), std::any_cast<float*>(a) +c );
+            return T( std::any_cast<typename T::value_type*>(a), std::any_cast<typename T::value_type*>(a) + c );
         }
 
         template <typename T>
@@ -141,6 +141,8 @@ namespace dyslang2
                         result += std::to_string(std::any_cast<float *>(value.values)[i]);
                     if (value.values.type() == typeid(int *))
                         result += std::to_string(std::any_cast<int *>(value.values)[i]);
+                    if (value.values.type() == typeid(uint32_t*))
+                        result += std::to_string(std::any_cast<uint32_t*>(value.values)[i]);
 
                     sep = ", ";
                 }

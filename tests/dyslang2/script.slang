@@ -8,6 +8,7 @@ interface IProperties {
 
 [anyValueSize(64)]
 interface IEmitter<Real : __BuiltinFloatingPointType> {
+    property uint bla;
     int emit();
 };
 
@@ -15,10 +16,12 @@ struct Point<Real : __BuiltinFloatingPointType>  {
     int x;
     int y;
     float a;
+    Ptr<float> ptr;
     vector<Real, 3> b;
     int arr[3];
     //StaticArray<float> profile;
 
+    [require(cpp)]
     __init(IProperties p) {
         x = 2;
         y = 3;
@@ -51,13 +54,16 @@ struct Point<Real : __BuiltinFloatingPointType>  {
 };
 
 struct Point2<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
+    uint bla;
     int x;
     int y;
     float a;
     vector<Real, 3> b;
+    vector<int, 3> ints;
     int arr[3];
     // StaticArray<float> profile;
 
+    [require(cpp)]
     __init(IProperties p) {
         x = 2;
         y = 3;
@@ -70,6 +76,7 @@ struct Point2<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         x = p.get<int>("x");
         //y = p.get<int>("y");
         b = p.get<vector<Real, 3>>("b");
+        bla =  __int_cast<uint>(p.get<vector<Real, 3>>("b").z);
     }
 
     [mutating, require(cpp)]
@@ -83,6 +90,14 @@ struct Point2<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         if (!p.has("b")) {
             p.set("b", &b);
         }
+        if (!p.has("bla")) {
+            p.set("bla", &bla);
+        }
+    }
+
+    [mutating]
+    void copy(Point2<Real> other) {
+        x = other.x;
     }
 
     int emit() {
