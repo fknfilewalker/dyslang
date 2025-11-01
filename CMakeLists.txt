@@ -34,7 +34,7 @@ else()
     set(SLANG_IS_TOPLEVEL_PROJECT FALSE)
 endif()
 
-set(DYSLANG_SLANG_VERSION "2025.20")
+set(DYSLANG_SLANG_VERSION "2025.21")
 if(WIN32)
     set(DYSLANG_SLANG_OS "windows-x86_64")
 elseif(APPLE)
@@ -64,28 +64,28 @@ if(NOT DYSLANG_SLANG_FROM_SUBMODULE)
     add_library(slang SHARED IMPORTED GLOBAL)
     if(WIN32)
         set_target_properties(slang PROPERTIES
-            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/bin/slang.dll
-            IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang.lib
+            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/bin/slang-compiler.dll
+            IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang-compiler.lib
             INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
         )
         # workaround
         add_library(slang-glslang SHARED IMPORTED GLOBAL)
         set_target_properties(slang-glslang PROPERTIES
             IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/bin/slang-glslang.dll
-            IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang.lib
+            IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang-compiler.lib
             INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
         )
         set_property(TARGET slang PROPERTY INTERFACE_LINK_LIBRARIES slang-glslang)
         add_library(slang::slang-glslang ALIAS slang-glslang)
     elseif(APPLE)
         set_target_properties(slang PROPERTIES
-            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.dylib
+            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-compiler.dylib
             INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
         )
         # IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-glslang.dylib
     elseif(UNIX)
         set_target_properties(slang PROPERTIES
-            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.so
+            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-compiler.so
             IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-glslang.so
             INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
         )
