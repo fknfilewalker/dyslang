@@ -9,6 +9,7 @@
 #include <span>
 #include <any>
 #include <optional>
+#include <cstring>
 #include <slang.h>
 #include <slang-com-ptr.h>
 #include <slang-com-helper.h>

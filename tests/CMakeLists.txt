@@ -13,6 +13,11 @@ function(add_target target)
         set_target_properties(${target} PROPERTIES XCODE_GENERATE_SCHEME TRUE CMAKE_XCODE_SCHEME_WORKING_DIRECTORY "${DYSLANG_SOURCE_DIR}")
     elseif(UNIX)
         add_executable(${target} ${TARGET_SOURCES})
+
+        add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:${target}> $<TARGET_RUNTIME_DLLS:${target}>
+            COMMAND_EXPAND_LISTS
+        )
     endif()
     set_target_properties(${target} PROPERTIES FOLDER ${DYSLANG_TEST_FOLDER})
     if(TARGET_DEPS)

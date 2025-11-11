@@ -49,6 +49,7 @@ const char* type_kind_to_string(const slang::TypeReflection::Kind kind)
     case slang::TypeReflection::Kind::Pointer: return "Pointer";
     case slang::TypeReflection::Kind::DynamicResource: return "DynamicResource";
     }
+    return "Unknown";
 };
 
 const char* scalar_type_to_string(const slang::TypeReflection::ScalarType kind)
@@ -92,7 +93,7 @@ void print_variable(slang::VariableLayoutReflection* var, const size_t depth = 0
 {
 	std::string indent(depth * 2, ' ');
 	const char* name = var->getName();
-    printf("%s- %s offset: %llu\n", indent.c_str(), name, var->getOffset());
+    printf("%s- %s offset: %zu\n", indent.c_str(), name, var->getOffset());
     print_type(var->getTypeLayout(), depth + 2);
 }
 
@@ -102,7 +103,7 @@ void print_type(slang::TypeLayoutReflection* type, const size_t depth = 0)
 	const char* name = type->getName();
 	const char* kind = type_kind_to_string(type->getKind());
 	const char* scalar_type = scalar_type_to_string(type->getScalarType());
-	printf("%s- %s %s (%s elements: %llu size: %llu alignment: %d)\n", indent.c_str(), kind, name, scalar_type, type->getElementCount(), type->getSize(), type->getAlignment());
+	printf("%s- %s %s (%s elements: %zu size: %zu alignment: %d)\n", indent.c_str(), kind, name, scalar_type, type->getElementCount(), type->getSize(), type->getAlignment());
 	for (uint32_t i = 0; i < type->getFieldCount(); i++)
 	{
         print_variable(type->getFieldByIndex(i), depth + 2);
@@ -271,9 +272,9 @@ int slang_test()
     
     ComPtr<ISlangSharedLibrary> sharedLibrary;
     SLANG_RETURN_ON_FAIL(request->getTargetHostCallable(0, sharedLibrary.writeRef()))
-    void* ptr = sharedLibrary->findFuncByName("test");
-    void* add_ptr = sharedLibrary->findFuncByName("add");
-    void* add_ptr2 = sharedLibrary->findFuncByName("Test<float>::add"); // does not work
+    SlangFuncPtr ptr = sharedLibrary->findFuncByName("test");
+    SlangFuncPtr add_ptr = sharedLibrary->findFuncByName("add");
+    SlangFuncPtr add_ptr2 = sharedLibrary->findFuncByName("Test<float>::add"); // does not work
 
 	typedef int (*FuncType)(int);
 	FuncType func = (FuncType)ptr;

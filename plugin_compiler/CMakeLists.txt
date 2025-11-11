@@ -11,6 +11,10 @@ elseif(APPLE)
    add_executable(dyslang_plugin_compiler MACOSX_BUNDLE ${SOURCES})
 elseif(UNIX)
    add_executable(dyslang_plugin_compiler ${SOURCES})
+   add_custom_command(TARGET dyslang_plugin_compiler POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:dyslang_plugin_compiler> $<TARGET_RUNTIME_DLLS:dyslang_plugin_compiler>
+      COMMAND_EXPAND_LISTS
+   )
 endif()
 
 set_target_properties(dyslang_plugin_compiler PROPERTIES FOLDER ${DYSLANG_FOLDER})

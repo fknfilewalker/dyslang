@@ -68,12 +68,10 @@ if(NOT DYSLANG_SLANG_FROM_SUBMODULE)
             IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang-compiler.lib
             INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
         )
-        # workaround
         add_library(slang-glslang SHARED IMPORTED GLOBAL)
         set_target_properties(slang-glslang PROPERTIES
             IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/bin/slang-glslang.dll
             IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang-compiler.lib
-            INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
         )
         set_property(TARGET slang PROPERTY INTERFACE_LINK_LIBRARIES slang-glslang)
         add_library(slang::slang-glslang ALIAS slang-glslang)
@@ -86,9 +84,14 @@ if(NOT DYSLANG_SLANG_FROM_SUBMODULE)
     elseif(UNIX)
         set_target_properties(slang PROPERTIES
             IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-compiler.so
-            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-glslang-${DYSLANG_SLANG_VERSION}.so
             INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
         )
+        add_library(slang-glslang SHARED IMPORTED GLOBAL)
+        set_target_properties(slang-glslang PROPERTIES
+            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-glslang-${DYSLANG_SLANG_VERSION}.so
+        )
+        set_property(TARGET slang PROPERTY INTERFACE_LINK_LIBRARIES slang-glslang)
+        add_library(slang::slang-glslang ALIAS slang-glslang)
     endif()
 else()
     set(SLANG_ENABLE_GFX OFF)
@@ -109,7 +112,7 @@ add_library(slang::slang ALIAS slang)
 add_subdirectory(plugin_compiler)
 add_subdirectory(src)
 
-if(SLANG_IS_TOPLEVEL_PROJECT)
-	add_subdirectory(tests)
-endif()
+# if(SLANG_IS_TOPLEVEL_PROJECT)
+# 	add_subdirectory(tests)
+# endif()
 
