@@ -84,12 +84,16 @@ if(NOT DYSLANG_SLANG_FROM_SUBMODULE)
         target_link_libraries(slang INTERFACE slang::slang-compiler)
     elseif(UNIX)
         set_target_properties(slang::slang-compiler PROPERTIES
-            IMPORTED_LOCATION "${slang_zip_SOURCE_DIR}/lib/libslang-compiler.so"
+            IMPORTED_LOCATION "${slang_zip_SOURCE_DIR}/lib/libslang-compiler.so.0.${DYSLANG_SLANG_VERSION}"
         )
         set_target_properties(slang::slang-glslang PROPERTIES
             IMPORTED_LOCATION "${slang_zip_SOURCE_DIR}/lib/libslang-glslang-${DYSLANG_SLANG_VERSION}.so"
         )
-        target_link_libraries(slang INTERFACE slang::slang-compiler slang::slang-glslang)
+        target_link_libraries(slang INTERFACE slang::slang-compiler)
+        install(IMPORTED_RUNTIME_ARTIFACTS slang::slang-compiler CONFIGURATIONS Debug DESTINATION "debug")
+        install(IMPORTED_RUNTIME_ARTIFACTS slang::slang-compiler CONFIGURATIONS Release DESTINATION "release")
+        install(IMPORTED_RUNTIME_ARTIFACTS slang::slang-glslang CONFIGURATIONS Debug DESTINATION "debug")
+        install(IMPORTED_RUNTIME_ARTIFACTS slang::slang-glslang CONFIGURATIONS Release DESTINATION "release")
     endif()
 else()
     set(SLANG_ENABLE_GFX OFF)
