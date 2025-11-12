@@ -34,7 +34,7 @@ else()
     set(SLANG_IS_TOPLEVEL_PROJECT FALSE)
 endif()
 
-set(DYSLANG_SLANG_VERSION "2025.21.2")
+set(DYSLANG_SLANG_VERSION "2025.22")
 if(WIN32)
     set(DYSLANG_SLANG_OS "windows-x86_64")
 elseif(APPLE)
@@ -61,37 +61,34 @@ set(DYSLANG_SLANG_FROM_SUBMODULE FALSE)
 if(NOT DYSLANG_SLANG_FROM_SUBMODULE)
     FetchContent_Populate(slang_zip URL https://github.com/shader-slang/slang/releases/download/v${DYSLANG_SLANG_VERSION}/slang-${DYSLANG_SLANG_VERSION}-${DYSLANG_SLANG_OS}.zip QUIET)
     message(STATUS "Slang dir: ${slang_zip_SOURCE_DIR}")
-    add_library(slang SHARED IMPORTED GLOBAL)
+    add_library(slang INTERFACE)
+    add_library(slang::slang-compiler SHARED IMPORTED GLOBAL)
+    add_library(slang::slang-glslang SHARED IMPORTED GLOBAL)
+    target_include_directories(slang 
+        INTERFACE "${slang_zip_SOURCE_DIR}/include"
+    )
     if(WIN32)
-        set_target_properties(slang PROPERTIES
+        set_target_properties(slang::slang-compiler PROPERTIES
             IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/bin/slang-compiler.dll
             IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang-compiler.lib
-            INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
         )
-        add_library(slang-glslang SHARED IMPORTED GLOBAL)
-        set_target_properties(slang-glslang PROPERTIES
+        set_target_properties(slang::slang-glslang PROPERTIES
             IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/bin/slang-glslang.dll
-            IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang-compiler.lib
         )
-        set_property(TARGET slang PROPERTY INTERFACE_LINK_LIBRARIES slang-glslang)
-        add_library(slang::slang-glslang ALIAS slang-glslang)
+        target_link_libraries(slang INTERFACE slang::slang-compiler slang::slang-glslang)
     elseif(APPLE)
-        set_target_properties(slang PROPERTIES
-            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-compiler.dylib
-            INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
+        set_target_properties(slang::slang-compiler PROPERTIES
+            IMPORTED_LOCATION "${slang_zip_SOURCE_DIR}/lib/libslang-compiler.dylib"
         )
-        # IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-glslang.dylib
+        target_link_libraries(slang INTERFACE slang::slang-compiler)
     elseif(UNIX)
-        set_target_properties(slang PROPERTIES
-            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-compiler.so
-            INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
+        set_target_properties(slang::slang-compiler PROPERTIES
+            IMPORTED_LOCATION "${slang_zip_SOURCE_DIR}/lib/libslang-compiler.so"
         )
-        add_library(slang-glslang SHARED IMPORTED GLOBAL)
-        set_target_properties(slang-glslang PROPERTIES
-            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-glslang-${DYSLANG_SLANG_VERSION}.so
+        set_target_properties(slang::slang-glslang PROPERTIES
+            IMPORTED_LOCATION "${slang_zip_SOURCE_DIR}/lib/libslang-glslang-${DYSLANG_SLANG_VERSION}.so"
         )
-        set_property(TARGET slang PROPERTY INTERFACE_LINK_LIBRARIES slang-glslang)
-        add_library(slang::slang-glslang ALIAS slang-glslang)
+        target_link_libraries(slang INTERFACE slang::slang-compiler slang::slang-glslang)
     endif()
 else()
     set(SLANG_ENABLE_GFX OFF)
