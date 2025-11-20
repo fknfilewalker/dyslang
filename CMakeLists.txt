@@ -63,7 +63,7 @@ if(NOT DYSLANG_SLANG_FROM_SUBMODULE)
     message(STATUS "Slang dir: ${slang_zip_SOURCE_DIR}")
     add_library(slang INTERFACE)
     add_library(slang::slang-compiler SHARED IMPORTED GLOBAL)
-    add_library(slang::slang-glslang SHARED IMPORTED GLOBAL)
+    add_library(slang::slang-glslang MODULE IMPORTED GLOBAL)
     target_include_directories(slang 
         INTERFACE "${slang_zip_SOURCE_DIR}/include"
     )
@@ -76,10 +76,13 @@ if(NOT DYSLANG_SLANG_FROM_SUBMODULE)
             IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/bin/slang-glslang.dll
             IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang-compiler.lib
         )
-        target_link_libraries(slang INTERFACE slang::slang-compiler slang::slang-glslang)
+        target_link_libraries(slang INTERFACE slang::slang-compiler)
     elseif(APPLE)
         set_target_properties(slang::slang-compiler PROPERTIES
             IMPORTED_LOCATION "${slang_zip_SOURCE_DIR}/lib/libslang-compiler.dylib"
+        )
+        set_target_properties(slang::slang-glslang PROPERTIES
+            IMPORTED_LOCATION "${slang_zip_SOURCE_DIR}/lib/libslang-glslang-${DYSLANG_SLANG_VERSION}.so"
         )
         target_link_libraries(slang INTERFACE slang::slang-compiler)
     elseif(UNIX)
