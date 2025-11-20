@@ -74,7 +74,6 @@ if(NOT DYSLANG_SLANG_FROM_SUBMODULE)
         )
         set_target_properties(slang::slang-glslang PROPERTIES
             IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/bin/slang-glslang.dll
-            IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang-compiler.lib
         )
         target_link_libraries(slang INTERFACE slang::slang-compiler)
     elseif(APPLE)
