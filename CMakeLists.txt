@@ -81,7 +81,7 @@ if(NOT DYSLANG_SLANG_FROM_SUBMODULE)
             IMPORTED_LOCATION "${slang_zip_SOURCE_DIR}/lib/libslang-compiler.dylib"
         )
         set_target_properties(slang::slang-glslang PROPERTIES
-            IMPORTED_LOCATION "${slang_zip_SOURCE_DIR}/lib/libslang-glslang-${DYSLANG_SLANG_VERSION}.so"
+            IMPORTED_LOCATION "${slang_zip_SOURCE_DIR}/lib/libslang-glslang-${DYSLANG_SLANG_VERSION}.dylib"
         )
         target_link_libraries(slang INTERFACE slang::slang-compiler)
     elseif(UNIX)
