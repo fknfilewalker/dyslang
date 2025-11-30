@@ -102,6 +102,13 @@ void print_type(slang::TypeLayoutReflection* type, const size_t depth = 0)
 	std::string indent(depth * 2, ' ');
 	const char* name = type->getName();
 	const char* kind = type_kind_to_string(type->getKind());
+
+    auto element_type_name = type->getElementTypeLayout()->getName();
+    auto element_type = scalar_type_to_string(type->getElementTypeLayout()->getScalarType());
+	const char* scalar_type = scalar_type_to_string(type->getScalarType());
+	printf("%s- %s %s (scalar: %s element: %s elements: %zu size: %zu alignment: %d)\n", indent.c_str(), 
+        kind, name, scalar_type, element_type, type->getElementCount(), type->getSize(), type->getAlignment()
+    );
 	const char* scalar_type = scalar_type_to_string(type->getScalarType());
 	printf("%s- %s %s (%s elements: %zu size: %zu alignment: %d)\n", indent.c_str(), kind, name, scalar_type, type->getElementCount(), type->getSize(), type->getAlignment());
 	for (uint32_t i = 0; i < type->getFieldCount(); i++)

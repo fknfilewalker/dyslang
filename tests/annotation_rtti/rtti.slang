@@ -1,7 +1,9 @@
+typealias u64 = uint64_t;
+
 __generic<T>
 struct StaticArray {
     T* data;
-    uint64_t size;
+    u64 size;
 };
 
 [DllExport] int test(int x) {
@@ -23,6 +25,7 @@ interface IEmitter {
 struct Point<Real : __BuiltinFloatingPointType> : IEmitter {
     int x;
     int y;
+    int* vertices;
     Real a;
     vector<Real, 3> b;
     int arr[3];
