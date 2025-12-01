@@ -1,3 +1,5 @@
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 #include <string>
 #include <slang-com-ptr.h>
@@ -28,7 +30,7 @@ struct Entry
     //}
 
     std::string name;
-    std::variant<void*, int*, float*/*, std::vector<Entry>*/> value;
+    std::variant<void*, int*, float* /*, std::vector<Entry>*/> value;
     size_t size;
     size_t length;
     size_t offset;
@@ -131,6 +133,79 @@ private:
     }
 };
 
+struct Entry2
+{
+    template<typename T>
+    Entry2(const size_t offset, std::string name, const size_t length = 1)
+        : name{ std::move(name) }, size{ sizeof(T) }, length{ length }
+    {
+        uint8_t* v = nullptr;
+        v += offset;
+        _offset = reinterpret_cast<T*>(v);
+    }
+
+    template<typename E>
+    E& get(std::span<uint8_t> heap)
+    {
+        if (std::holds_alternative<E*>(_offset))
+        {
+            // add offet to heap base
+            size_t offset = reinterpret_cast<size_t>(std::get<E*>(_offset));
+            return *reinterpret_cast<E*>(heap.data() + offset);
+        }
+    }
+
+    std::string name;
+    std::variant<void*, int*, float*, double*> _offset;
+    size_t size;
+    size_t length;
+};
+
+struct DynamicObject2;
+struct DynamicClass
+{
+    bool has_member(const std::string& name) const
+    {
+        for (const auto& entry : entries)
+        {
+            if (entry.name == name)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    std::vector<Entry2> entries;
+};
+
+struct DynamicObject2
+{
+    DynamicObject2(const DynamicClass& cls)
+        : dynamic_class{ cls }
+    {
+
+    }
+
+    template<typename E>
+    E& access_member(const std::string& name)
+    {
+        for (auto& entry : dynamic_class.entries)
+        {
+            return entry.get<E>(data);
+        }
+        throw std::runtime_error("Member not found: " + name);
+    }
+
+    std::vector<uint8_t>& payload()
+    {
+        return data;
+    }
+
+    DynamicClass dynamic_class;
+    std::vector<uint8_t> data;
+};
+
 int main(int argc, char* argv[]) {
 	{
         DynamicObject dc(8);
@@ -143,13 +218,16 @@ int main(int argc, char* argv[]) {
         DynamicObject dynObj(32);
         int aa = 1;
         float bb = 2.0f;
-        double cc = 3.0;
+        double cc = 3.067;
         dynObj.add_member("int_member", aa, 0);
         dynObj.add_member("float_member", bb, 4);
         dynObj.add_member("double_member", cc, 8);
         dynObj.add_member("my_struct::int", aa, 16);
         dynObj.access_member<int>("my_struct::int") += 20;
         //auto& struct_member = dynObj.access_member<std::vector<Entry>>("struct_member");
+
+        Entry2 e2(dynObj.payload(), 8, "double_member", cc);
+        double& double_member = e2.get<double>(dynObj.payload());
 
         DynamicObject dynObj2 = std::move(dynObj);
         dynObj.data.resize(16);
