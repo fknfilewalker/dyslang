@@ -12,132 +12,14 @@
 #include <span>
 using namespace Slang;
 
+struct DynamicClass;
 struct Entry
 {
     template<typename T>
-    Entry(std::span<uint8_t> heap, const size_t offset, std::string name, const T& entry, const size_t length = 1)
-        : name{ std::move(name) }, size{ sizeof(T) }, length{ length }, offset{
-        offset
-        } {
-        std::memcpy(heap.data() + offset, &entry, size);
-        value = reinterpret_cast<T*>(heap.data() + offset);
-    }
-    //Entry(std::span<uint8_t> heap, const size_t offset, std::string name, const std::vector<Entry>& entries, const size_t size, const size_t length = 1)
-    //    : name{ std::move(name) }, size{ size }, length{ length }, offset{
-    //    offset
-    //    } {
-    //    value = entries;
-    //}
-
-    std::string name;
-    std::variant<void*, int*, float* /*, std::vector<Entry>*/> value;
-    size_t size;
-    size_t length;
-    size_t offset;
-};
-
-//struct CompositEntry
-//{
-//    std::string name;
-//    std::vector<Entry> entries;
-//    size_t size;
-//    size_t length;
-//    size_t offset;
-//};
-
-struct DynamicObject
-{
-    DynamicObject(size_t size)
-    {
-        data.resize(size);
-    }
-
-    // copy constructor
-    DynamicObject(const DynamicObject& other)
-        : entries{ other.entries }, data{ other.data }
-    {
-        update_backing();
-    }
-
-    // move constructor
-    DynamicObject(DynamicObject&& other) noexcept
-        : entries{ std::move(other.entries) }, data{ std::move(other.data) }
-    {
-        update_backing();
-    }
-
-    //void add_struct_member(const std::string& name, size_t size, size_t offset)
-    //{
-    //    entries.emplace_back(data, offset, name, std::vector<Entry>(), size, 1);
-    //}
-
-    template<typename E>
-    void add_member(const std::string& name, const E& value, size_t offset)
-    {
-        if (has_member(name))
-        {
-            throw std::runtime_error("Member already exists: " + name);
-        }
-        entries.emplace_back(data, offset, name, value, 1);
-    }
-
-    bool has_member(const std::string& name) const
-    {
-        for (const auto& entry : entries)
-        {
-            if (entry.name == name)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    template<typename E>
-    E& access_member(const std::string& name)
-    {
-        for (auto& entry : entries)
-        {
-            if (std::holds_alternative<E*>(entry.value) && entry.name == name)
-            {
-                return *std::get<E*>(entry.value);
-            }
-        }
-        throw std::runtime_error("Member not found: " + name);
-    }
-
-    std::vector<uint8_t>& payload()
-    {
-        return data;
-    }
-
-    std::vector<Entry> entries;
-    std::vector<uint8_t> data;
-
-private:
-    void update_backing()
-    {
-        for (auto& entry : entries)
-        {
-            // Update the heap pointer in each entry to point to the new underlying data
-            std::visit([&]<typename V>(V & v) {
-                //if constexpr (std::is_same_v<V, std::vector<Entry>>)
-                //{
-                //} else
-                if constexpr (std::is_pointer_v<V>)
-                {
-                    v = reinterpret_cast<std::remove_pointer_t<V>*>(data.data() + entry.offset);
-                }
-            }, entry.value);
-        }
-    }
-};
-
-struct Entry2
-{
-    template<typename T>
-    Entry2(const size_t offset, std::string name, const size_t length = 1)
-        : name{ std::move(name) }, size{ sizeof(T) }, length{ length }
+    Entry(T* ptr, std::string name, const size_t offset, const size_t elements = 1)
+        : name{ std::move(name) }, 
+	//size{ sizeof(T) }, 
+	elements{ elements }
     {
         uint8_t* v = nullptr;
         v += offset;
@@ -150,23 +32,29 @@ struct Entry2
         if (std::holds_alternative<E*>(_offset))
         {
             // add offet to heap base
-            size_t offset = reinterpret_cast<size_t>(std::get<E*>(_offset));
+            E* ptr = std::get<E*>(_offset);
+            auto offset = reinterpret_cast<size_t>(std::get<E*>(_offset));
             return *reinterpret_cast<E*>(heap.data() + offset);
         }
+        throw std::runtime_error("Wrong Type");
     }
 
     std::string name;
-    std::variant<void*, int*, float*, double*> _offset;
-    size_t size;
-    size_t length;
+    std::variant<void*, int*, float*, double*, DynamicClass*> _offset;
+    //size_t size;
+    size_t elements;
 };
 
-struct DynamicObject2;
 struct DynamicClass
 {
+	DynamicClass(std::string name, size_t entries = 1) : _name{ std::move(name) }
+    {
+        this->_entries.reserve(entries);
+    }
+
     bool has_member(const std::string& name) const
     {
-        for (const auto& entry : entries)
+        for (const auto& entry : _entries)
         {
             if (entry.name == name)
             {
@@ -176,63 +64,98 @@ struct DynamicClass
         return false;
     }
 
-    std::vector<Entry2> entries;
+    template<typename E>
+    void add_member(const std::string& name, size_t offset, size_t elements = 1)
+    {
+        if (has_member(name))
+        {
+            throw std::runtime_error("Member already exists: " + name);
+        }
+        E* d = nullptr;
+        _entries.emplace_back(d, name, offset, elements);
+    }
+
+    std::string to_string() const
+	{
+		std::string out = "DynamicClass: " + _name + "\n";
+        for (auto& e : _entries)
+        {
+			out += "  Member: " + e.name + "\n";
+        }
+        return out;
+	}
+
+    std::string _name;
+    std::vector<Entry> _entries;
 };
 
-struct DynamicObject2
+struct DynamicObject
 {
-    DynamicObject2(const DynamicClass& cls)
-        : dynamic_class{ cls }
-    {
+    DynamicObject(DynamicClass cls, const size_t size)
+		: dynamic_class{ std::move(cls) }, _data(size, 0) {}
 
+    // copy constructor
+    DynamicObject(const DynamicObject& other)
+        : dynamic_class{ other.dynamic_class }, _data{ other._data } {}
+
+    // move constructor
+    DynamicObject(DynamicObject&& other) noexcept
+        : dynamic_class{ std::move(other.dynamic_class) }, _data{ std::move(other._data) } {}
+
+    bool has_member(const std::string& name) const
+    {
+        return dynamic_class.has_member(name);
     }
 
     template<typename E>
-    E& access_member(const std::string& name)
+    std::conditional_t<std::is_pointer_v<E>, E, E&> access_member(const std::string& name)
     {
-        for (auto& entry : dynamic_class.entries)
+        using NonPtrType = std::remove_pointer_t<E>;
+        for (auto& entry : dynamic_class._entries)
         {
-            return entry.get<E>(data);
+            if (std::holds_alternative<NonPtrType*>(entry._offset) && entry.name == name)
+            {
+                if constexpr (std::is_pointer_v<E>) return &entry.get<NonPtrType>(_data);
+                else return entry.get<NonPtrType>(_data);
+            }
         }
         throw std::runtime_error("Member not found: " + name);
     }
 
-    std::vector<uint8_t>& payload()
-    {
-        return data;
-    }
+    std::vector<uint8_t>& payload() { return _data; }
+    uint8_t* data() { return _data.data(); }
 
     DynamicClass dynamic_class;
-    std::vector<uint8_t> data;
+    std::vector<uint8_t> _data;
 };
 
 int main(int argc, char* argv[]) {
 	{
-        DynamicObject dc(8);
-        int x = 3;
-        int y = 4;
-        dc.add_member("x", x, 0);
-        dc.add_member("y", y, 4);
-	}
-	{
-        DynamicObject dynObj(32);
-        int aa = 1;
-        float bb = 2.0f;
-        double cc = 3.067;
-        dynObj.add_member("int_member", aa, 0);
-        dynObj.add_member("float_member", bb, 4);
-        dynObj.add_member("double_member", cc, 8);
-        dynObj.add_member("my_struct::int", aa, 16);
-        dynObj.access_member<int>("my_struct::int") += 20;
-        //auto& struct_member = dynObj.access_member<std::vector<Entry>>("struct_member");
+        DynamicClass dynVecClass("ivec2", 2);
+        dynVecClass.add_member<int>("x", 0);
+        dynVecClass.add_member<int>("y", 0);
+        DynamicObject dynVecObj(dynVecClass, 8);
+		dynVecObj.access_member<int>("x") = 4;
+		dynVecObj.access_member<int>("y") = 8;
 
-        Entry2 e2(dynObj.payload(), 8, "double_member", cc);
-        double& double_member = e2.get<double>(dynObj.payload());
+		DynamicClass dynClass("MyClass", 5);
+        dynClass.add_member<int>("int_member", 0);
+        dynClass.add_member<float>("float_member", 4);
+        dynClass.add_member<double>("double_member", 8);
+        dynClass.add_member<int>("int_array_member", 16, 4);
+        dynClass.add_member<DynamicClass>("vec_member", 32, 1);
+		DynamicObject dynObj(dynClass, 32);
+        dynObj.access_member<int>("int_member") = 1;
+		dynObj.access_member<float>("float_member") = 2.0f;
+		dynObj.access_member<double>("double_member") = 3.067;
+        int* ptr = dynObj.access_member<int*>("int_array_member");
+        dynObj.access_member<int*>("int_array_member")[0] = 1;
 
-        DynamicObject dynObj2 = std::move(dynObj);
-        dynObj.data.resize(16);
-        dynObj.add_member("int_member", aa, 0);
-        int& int_member = dynObj.access_member<int>("int_member");
-        int_member += 10;
+        auto dm = dynObj.access_member<double>("double_member");
+		printf("double_member: %f\n", dm);
+        printf("has int_member: %d\n", dynObj.has_member("int_member"));
+        printf("has foo_member: %d\n", dynObj.has_member("foo_member"));
+
+		printf("%s\n", dynClass.to_string().c_str());
 	}
 }
