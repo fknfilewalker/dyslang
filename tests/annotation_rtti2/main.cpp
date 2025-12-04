@@ -166,7 +166,38 @@ struct DynamicObject
     std::vector<uint8_t> _data;
 };
 
+struct GroundTruth {
+    int a;
+    float b;
+    double c;
+};
+
+struct Vec2 {
+    int x;
+    int y;
+};
+struct GroundTruth2 {
+    int a;
+    uint8_t b;
+    double c;
+    Vec2 v;
+};
 int main(int argc, char* argv[]) {
+    {
+		printf("GroundTruth: size %zu alignof %zu\n", sizeof(GroundTruth), alignof(GroundTruth));
+		printf("  a: offset %zu size %zu alignof %zu\n", offsetof(GroundTruth, a), sizeof(GroundTruth::a), alignof(decltype(GroundTruth::a)));
+		printf("  b: offset %zu size %zu alignof %zu\n", offsetof(GroundTruth, b), sizeof(GroundTruth::b), alignof(decltype(GroundTruth::b)));
+		printf("  c: offset %zu size %zu alignof %zu\n", offsetof(GroundTruth, c), sizeof(GroundTruth::c), alignof(decltype(GroundTruth::c)));
+        printf("\n");
+        printf("GroundTruth2: size %zu alignof %zu\n", sizeof(GroundTruth2), alignof(GroundTruth2));
+		printf("  a: offset %zu size %zu alignof %zu\n", offsetof(GroundTruth2, a), sizeof(GroundTruth2::a), alignof(decltype(GroundTruth2::a)));
+		printf("  b: offset %zu size %zu alignof %zu\n", offsetof(GroundTruth2, b), sizeof(GroundTruth2::b), alignof(decltype(GroundTruth2::b)));
+		printf("  c: offset %zu size %zu alignof %zu\n", offsetof(GroundTruth2, c), sizeof(GroundTruth2::c), alignof(decltype(GroundTruth2::c)));
+		printf("  v: offset %zu size %zu alignof %zu\n", offsetof(GroundTruth2, v), sizeof(GroundTruth2::v), alignof(decltype(GroundTruth2::v)));
+        printf("\n");
+        printf("Vec2: size %zu alignof %zu\n", sizeof(Vec2), alignof(Vec2));
+        printf("\n");
+    }
 	{
         DynamicClass dynVecClass("ivec2", 2);
         dynVecClass.add_member<int>("x");
