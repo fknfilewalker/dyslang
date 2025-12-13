@@ -2,7 +2,7 @@
 #include <functional>
 #include <string>
 #include <filesystem>
-#ifdef WIN32
+#ifdef _WIN32
 #include <Shlwapi.h>
 #elif defined( __linux__ )
 #include <linux/limits.h>
@@ -62,7 +62,7 @@ namespace dyslang::platform
     constexpr bool isMacOS = os == OS::MacOS;
     constexpr bool isApple = isMacOS;
 
-#ifdef WIN32
+#ifdef _WIN32
 #define STDCALL __stdcall
 #else
 #define STDCALL
@@ -70,13 +70,13 @@ namespace dyslang::platform
 
     struct SharedLib
     {
-#ifdef WIN32
+#ifdef _WIN32
         using Handle = HMODULE;
 #else
 		using Handle = void*;
 #endif
 
-        explicit SharedLib(const Handle handle) : _handle{ handle } {}
+        explicit SharedLib(const Handle handle = {}) : _handle{ handle } {}
 
 		// move constructor
 		SharedLib(SharedLib&& other) noexcept : _handle{ other._handle }
@@ -95,7 +95,7 @@ namespace dyslang::platform
         static SharedLib open(const char* name)
         {
             std::string path{ name };
-#ifdef WIN32
+#ifdef _WIN32
             path += ".dll";
 #elif defined(__linux__)
             path += ".so";
@@ -103,18 +103,18 @@ namespace dyslang::platform
             path += ".dylib";
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
             return SharedLib{ LoadLibrary(path.c_str()) };
 #elif defined(__linux__) || defined(__APPLE__)
             return SharedLib{ dlopen(path.c_str(), RTLD_LAZY) };
 #else
-            return {};
+            return SharedLib();
 #endif
         }
 
         ~SharedLib() {
             if (valid()) {
-#ifdef WIN32
+#ifdef _WIN32
                 FreeLibrary(_handle);// > 0;
 #elif defined(__linux__) || defined(__APPLE__)
                 dlclose(_handle);
@@ -125,7 +125,7 @@ namespace dyslang::platform
         template <typename T>
         T loadVariable(const char* name)
         {
-#ifdef WIN32
+#ifdef _WIN32
             return reinterpret_cast<T>(GetProcAddress(_handle, name));
 #elif defined(__linux__) || defined(__APPLE__)
             return reinterpret_cast<T>(dlsym(_handle, name));
@@ -136,7 +136,7 @@ namespace dyslang::platform
     	std::function<R(Args...)> loadFunction(const char* name)
         {
             typedef R(STDCALL* FuncPtr)(Args...);
-#ifdef WIN32
+#ifdef _WIN32
             //void* p = GetProcAddress(_handle, name);
             FuncPtr ptr = reinterpret_cast<FuncPtr>(GetProcAddress(_handle, name));
 #elif defined(__linux__) || defined(__APPLE__)
