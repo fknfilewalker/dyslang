@@ -113,6 +113,6 @@ add_subdirectory(plugin_compiler)
 add_subdirectory(src)
 
 # if(SLANG_IS_TOPLEVEL_PROJECT)
-# 	add_subdirectory(tests)
+#   add_subdirectory(tests)
 # endif()
 

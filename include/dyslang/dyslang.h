@@ -470,6 +470,7 @@ namespace dyslang
         //dyslang_properties_get(dyslang::ResourceRefBase)
 #undef dyslang_properties_get
 
+#ifdef __cplusplus
 #define dyslang_properties_set(TYPE) vbegin(void) set(dyslang::CString, const TYPE*, uint64_t) vend;
         dyslang_properties_set(dyslang::u32)
         dyslang_properties_set(dyslang::i32)
@@ -479,6 +480,17 @@ namespace dyslang
         dyslang_properties_set(dyslang::f64)
         //dyslang_properties_set(dyslang::ResourceRefBase)
 #undef dyslang_properties_set
+#elif defined __SLANG__ // [TODO] if problems with this function, look into using Ptr<TYPE, Access.Read> instead of TYPE*
+#define dyslang_properties_set(TYPE) vbegin(void) set(dyslang::CString, TYPE*, uint64_t) vend;
+            dyslang_properties_set(dyslang::u32)
+            dyslang_properties_set(dyslang::i32)
+            dyslang_properties_set(dyslang::u64)
+            dyslang_properties_set(dyslang::i64)
+            dyslang_properties_set(dyslang::f32)
+            dyslang_properties_set(dyslang::f64)
+            //dyslang_properties_set(dyslang::ResourceRefBase)
+#undef dyslang_properties_set
+#endif
 	};
 
 #ifdef __SLANG_CPP__
