@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <iostream>
 #include <filesystem>
 #include <vector>
@@ -126,27 +127,36 @@ std::string create_variant_define(std::string variants) {
 Slang::ComPtr<slang::IBlob> compilerSharedLib(const Slang::ComPtr<slang::IGlobalSession>& globalSession, const SourceFile& source, const char* variants) {
     //std::string define = create_variant_define("float_rgb:float; double_rgb:double"); //"(float_rgb, float), (double_rgb, double)"
     std::string define = create_variant_define(variants);
-    //std::cout << "Variants: " << define << '\n';
-
-    SlangCompileRequest* slangRequest = spCreateCompileRequest(globalSession);
-    int targetIndex = spAddCodeGenTarget(slangRequest, SLANG_SHADER_SHARED_LIBRARY);
-    spAddPreprocessorDefine(slangRequest, "__DYSLANG__", "1");
-    spAddPreprocessorDefine(slangRequest, "__SLANG_CPP__", "1");
-    spAddPreprocessorDefine(slangRequest, "__DYSLANG_VARIANTS__", define.c_str());
+    // std::cout << "Variants: " << define << '\n';
     
-    spSetTargetFlags(slangRequest, targetIndex, SLANG_TARGET_FLAG_GENERATE_WHOLE_PROGRAM);
-    int translationUnitIndex = spAddTranslationUnit(slangRequest, SLANG_SOURCE_LANGUAGE_SLANG, nullptr);
-    spAddTranslationUnitSourceString(slangRequest, translationUnitIndex, source.module.c_str(), source.source.c_str());
-    const SlangResult compileRes = spCompile(slangRequest);
-    if (auto diagnostics = spGetDiagnosticOutput(slangRequest)) printf("%s", diagnostics);
+    slang::TargetDesc targetDesc = {};
+    targetDesc.format = SLANG_SHADER_SHARED_LIBRARY;
+    targetDesc.flags = SLANG_TARGET_FLAG_GENERATE_WHOLE_PROGRAM;
+    slang::SessionDesc sessionDesc = {};
+    sessionDesc.targets = &targetDesc;
+    sessionDesc.targetCount = 1;
+    slang::PreprocessorMacroDesc macros[3] = {
+        { "__DYSLANG__", "1" },
+        { "__SLANG_CPP__", "1" },
+        { "__DYSLANG_VARIANTS__", define.c_str() }
+    };
+    sessionDesc.preprocessorMacros = &macros[0];
+    sessionDesc.preprocessorMacroCount = 3;
+    sessionDesc.searchPathCount = 1;
+    const std::vector<const char*> paths = { source.path.c_str() };
+    sessionDesc.searchPaths = &paths[0];
 
-    if (SLANG_FAILED(compileRes)) {
-        spDestroyCompileRequest(slangRequest);
-        exitWithError("Error compiling slang module to shared library");
-    }
+    Slang::ComPtr<slang::ISession> session;
+    if (SLANG_FAILED(globalSession->createSession(sessionDesc, session.writeRef()))) exitWithError("Error creating session");
+
+    Slang::ComPtr<slang::IBlob> diagnosticBlob;
+    slang::IModule* slangModule = session->loadModuleFromSourceString(
+        source.module.c_str(), source.path.c_str(), source.source.c_str(), diagnosticBlob.writeRef()
+    );
+    checkError(diagnosticBlob);
 
     Slang::ComPtr<slang::IBlob> blob;
-    if (SLANG_FAILED(spGetTargetCodeBlob(slangRequest, 0, blob.writeRef()))) {
+    if (SLANG_FAILED(slangModule->getTargetCode(0, blob.writeRef()))) {
         exitWithError("Error getting shared library from slang request");
     }
     return blob;
