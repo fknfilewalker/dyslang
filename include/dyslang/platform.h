@@ -15,7 +15,7 @@
 
 namespace dyslang::platform
 {
-    static std::filesystem::path& get_executable_filepath()
+    static std::filesystem::path& executable_filepath()
     {
 #ifdef _WIN32
         char carr[MAX_PATH];
@@ -38,8 +38,6 @@ namespace dyslang::platform
 
 namespace dyslang::platform
 {
-    const std::string executable_path = get_executable_filepath().parent_path().string();
-
     constexpr bool isDebug =
 #if !defined( NDEBUG ) || defined( _DEBUG )
         true
@@ -89,8 +87,6 @@ namespace dyslang::platform
             other._handle = nullptr;
 	        return *this;
         }
-
-
 
         static SharedLib open(const char* name)
         {

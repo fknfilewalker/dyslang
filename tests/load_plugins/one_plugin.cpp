@@ -4,14 +4,16 @@
 #include <dyslang/dyslang.h>
 
 int main(int argc, char* argv[]) {
-    std::filesystem::path path = std::filesystem::current_path();
-    std::cout << "Working Dir: " << path << '\n';
+    std::filesystem::path cwd = std::filesystem::current_path();
+    std::cout << "Working Dir: " << cwd << '\n';
+    std::filesystem::path path = dyslang::platform::executable_filepath().parent_path();
+    std::cout << "Executable Dir: " << path << '\n';
 
     const char* variant = "float_rgb";
     using Real = float;
 
     // load plugin
-    dyslang::Plugin plugin{ "plugins/point" };
+    dyslang::Plugin plugin{ (path / "plugins/point").string() };
     std::cout << plugin.to_string() << '\n';
 
 	// set properties 
