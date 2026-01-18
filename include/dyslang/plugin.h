@@ -80,12 +80,11 @@ namespace dyslang
         // types, and 0 to represent null).
         // byte 8-11: 32-bit sequential ID of the type conformance witness.
         // byte 12-15: unused.
-        void set_type_conformance_index(const uint32_t index) { 
+        void set_type_conformance_id(const uint32_t id) { 
             *reinterpret_cast<uint32_t*>(data.data() + 0u * sizeof(uint32_t)) = 1;
-            *reinterpret_cast<uint32_t*>(data.data() + 2u * sizeof(uint32_t)) = index;
+            *reinterpret_cast<uint32_t*>(data.data() + 2u * sizeof(uint32_t)) = id;
         }
-		[[nodiscard]] uint32_t get_type_conformance_index() const { return *reinterpret_cast<const uint32_t*>(data.data() + 2u * sizeof(uint32_t)); }
-
+		[[nodiscard]] uint32_t get_type_conformance_id() const { return *reinterpret_cast<const uint32_t*>(data.data() + 2u * sizeof(uint32_t)); }
         std::vector<uint8_t> data;
     };
 
@@ -104,7 +103,7 @@ namespace dyslang
         }
 
         [[nodiscard]] std::string to_string() const {
-            return "Object:\n Interface: " + interface_name + "\n Implementation: " + implementation_name + "\n Variant: " + variant + "\n Conformance Index: " + std::to_string(data.get_type_conformance_index()) + "\n RTTI Header Size: " + std::to_string(data.rtti_header_size) + " Bytes\n Data Size: " + std::to_string(data.get_data_size()) + " Bytes\n Total Size: " + std::to_string(data.get_size()) + " Bytes\n";
+            return "Object:\n Interface: " + interface_name + "\n Implementation: " + implementation_name + "\n Variant: " + variant + "\n Conformance ID: " + std::to_string(data.get_type_conformance_id()) + "\n RTTI Header Size: " + std::to_string(data.rtti_header_size) + " Bytes\n Data Size: " + std::to_string(data.get_data_size()) + " Bytes\n Total Size: " + std::to_string(data.get_size()) + " Bytes\n";
         }
 
         Plugin& plugin;

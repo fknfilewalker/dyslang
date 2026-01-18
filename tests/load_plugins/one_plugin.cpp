@@ -11,6 +11,7 @@ int main(int argc, char* argv[]) {
 
     const char* variant = "float_rgb";
     using Real = float;
+    const uint32_t conformance_id = 420;
 
     // load plugin
     dyslang::Plugin plugin{ (path / "plugins/point").string() };
@@ -32,6 +33,7 @@ int main(int argc, char* argv[]) {
 
     // create object
     std::unique_ptr<dyslang::Object<void>> light = plugin.create<void>(props_in, variant);
+    light->data.set_type_conformance_id(conformance_id);
     std::cout << light->to_string() << '\n';
 
     // read back obj data
@@ -49,7 +51,7 @@ int main(int argc, char* argv[]) {
 	uint32_t binding = 0, space = 0;
     slangc.get_global_resource_array_binding(binding, space);
 	std::cout << "Global Resource Array: Binding: " << binding << ", Set: " << space << "\n\n";
-    slangc.add_type_conformance(light->interface_name, light->implementation_name);
+    slangc.add_type_conformance(light->interface_name, light->implementation_name, conformance_id);
     dyslang::Slangc::Hash hash;
     slangc = slangc.compose().hash(0, hash);
     std::vector<uint8_t> output = slangc.glsl();
