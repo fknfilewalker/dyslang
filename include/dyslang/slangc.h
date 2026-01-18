@@ -4,6 +4,7 @@
 #include <slang-com-ptr.h>
 #include <slang.h>
 #include <vector>
+#include <array>
 
 namespace dyslang {
 	thread_local static Slang::ComPtr<slang::IGlobalSession> slangGlobalSession;
