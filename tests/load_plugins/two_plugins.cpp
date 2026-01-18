@@ -21,10 +21,10 @@ int main(int argc, char* argv[]) {
 	// set properties 
     dyslang::Properties props_in;
 	props_in.set("id", 777);
-    props_in.set("position", dyslang::v3<Real>{ 10.0f, 10.0f, 13.0f });
-    props_in.set("color", dyslang::v3<Real>{ 3.0f, 4.0, 1000 });
+    props_in.set("position", std::array<Real, 3>{ 10.0f, 10.0f, 13.0f });
+    props_in.set("color", std::array<Real, 3>{ 3.0f, 4.0, 1000 });
     props_in.set("intensity", Real(15.0f));
-    props_in.set("transform", dyslang::m3x3<Real>{
+    props_in.set("transform", dyslang::matrix<Real, 3, 3>{
         1.0f, 0.0, 0.0,
     	0.0f, 1.0, 0.0,
     	0.0f, 0.0, 1.0

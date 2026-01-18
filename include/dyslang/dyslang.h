@@ -276,13 +276,6 @@ namespace dyslang {
         using type = std::variant<Ts ...>;
     };
 
-    template<typename T>
-    struct always_false : std::false_type {};
-
-    template<typename T> inline constexpr bool always_false_v = always_false<T>::value;
-
-    template <typename T> concept integral = std::integral<T>;
-    template <typename T> concept floating_point = std::floating_point<T>;
 	template <typename T> concept arithmetic = std::integral<T> || std::floating_point<T>;
     template <typename T> inline constexpr bool is_arithmetic_v = std::is_floating_point_v<T> || std::is_integral_v<T>;
 
@@ -312,12 +305,12 @@ namespace dyslang {
     template <typename T>
     struct Optional
     {
-        Optional() : value{}, hasValue{} {}
+        Optional() : hasValue{}, value{} {}
         Optional(std::nullopt_t) : Optional{} {}
-        Optional(const T& v) : value{ v }, hasValue{ true } {}
+        Optional(const T& v) : hasValue{ true }, value{ v } {}
 
-        T value;
         b32 hasValue;
+        T value;
 
         Optional& operator=(const T& v) { value = v; hasValue = 1; return *this; }
         Optional& operator=(const std::nullopt_t&) { value = {}; hasValue = 0; return *this; }
@@ -326,93 +319,10 @@ namespace dyslang {
 
 #else
 namespace dyslang {
-	slang_internal typealias integral = __BuiltinIntegerType;
-	slang_internal typealias floating_point = __BuiltinFloatingPointType;
-	slang_internal typealias arithmetic = __BuiltinArithmeticType;
-
 	slang_internal typealias b32 = uint32_t;
 	slang_internal typealias CString = NativeString;
 }
 #endif
-
-namespace dyslang {
-    slang_internal typealias i32 = int;
-    slang_internal typealias u32 = uint32_t;
-    slang_internal typealias i64 = int64_t;
-    slang_internal typealias u64 = uint64_t;
-
-    slang_internal typealias f32 = float;
-    slang_internal typealias f64 = double;
-
-    __generic<__concept(arithmetic, T)> slang_internal typealias v2 = vector<T, 2>;
-    __generic<__concept(arithmetic, T)> slang_internal typealias v3 = vector<T, 3>;
-    __generic<__concept(arithmetic, T)> slang_internal typealias v4 = vector<T, 4>;
-
-    slang_internal typealias b32v2 = v2<uint32_t>;
-    slang_internal typealias b32v3 = v3<uint32_t>;
-    slang_internal typealias b32v4 = v4<uint32_t>;
-
-    slang_internal typealias i32v2 = v2<int32_t>;
-    slang_internal typealias i32v3 = v3<int32_t>;
-    slang_internal typealias i32v4 = v4<int32_t>;
-
-    slang_internal typealias u32v2 = v2<uint32_t>;
-    slang_internal typealias u32v3 = v3<uint32_t>;
-    slang_internal typealias u32v4 = v4<uint32_t>;
-
-    slang_internal typealias i64v2 = v2<int64_t>;
-    slang_internal typealias i64v3 = v3<int64_t>;
-    slang_internal typealias i64v4 = v4<int64_t>;
-
-    slang_internal typealias u64v2 = v2<uint64_t>;
-    slang_internal typealias u64v3 = v3<uint64_t>;
-    slang_internal typealias u64v4 = v4<uint64_t>;
-
-    slang_internal typealias f32v2 = v2<float>;
-    slang_internal typealias f32v3 = v3<float>;
-    slang_internal typealias f32v4 = v4<float>;
-
-    slang_internal typealias f64v2 = v2<double>;
-    slang_internal typealias f64v3 = v3<double>;
-    slang_internal typealias f64v4 = v4<double>;
-
-    __generic<__concept(arithmetic, T)> slang_internal typealias m2x2 = matrix<T, 2, 2>;
-    __generic<__concept(arithmetic, T)> slang_internal typealias m3x3 = matrix<T, 3, 3>;
-    __generic<__concept(arithmetic, T)> slang_internal typealias m4x4 = matrix<T, 4, 4>;
-
-    slang_internal typealias f32m2x2 = m2x2<float>;
-    slang_internal typealias f32m3x3 = m3x3<float>;
-    slang_internal typealias f32m4x4 = m4x4<float>;
-
-    slang_internal typealias f64m2x2 = m2x2<double>;
-    slang_internal typealias f64m3x3 = m3x3<double>;
-    slang_internal typealias f64m4x4 = m4x4<double>;
-
-    __generic<typename First, typename Second> struct Pair
-    {
-        First first;
-        Second second;
-    };
-
-    __generic<typename T, u32 N> struct HashMap {
-        u32 bucketIndex(const u32 hash) {
-            return hash % N;
-        }
-
-        Optional<T> get(const u32 hash) {
-            return values[bucketIndex(hash)];
-        }
-
-        annotations(mutating) b32 insert(const u32 hash, const T value) {
-            auto idx = bucketIndex(hash);
-            if (values[idx].hasValue) return false;
-            values[idx] = Optional<T>(value);
-            return true;
-        }
-
-        Optional<T> values[N];
-    };
-}
 
 namespace dyslang
 {
@@ -424,33 +334,33 @@ namespace dyslang
         vbegin(dyslang::b32) has_property(dyslang::CString) vend;
 
 #define dyslang_properties_get(TYPE) vbegin(void) get(dyslang::CString, TYPE**, uint64_t*) vend;
-        dyslang_properties_get(dyslang::u32)
-        dyslang_properties_get(dyslang::i32)
-        dyslang_properties_get(dyslang::u64)
-        dyslang_properties_get(dyslang::i64)
-        dyslang_properties_get(dyslang::f32)
-        dyslang_properties_get(dyslang::f64)
+        dyslang_properties_get(uint32_t)
+        dyslang_properties_get(int32_t)
+        dyslang_properties_get(uint64_t)
+        dyslang_properties_get(int64_t)
+        dyslang_properties_get(float)
+        dyslang_properties_get(double)
         //dyslang_properties_get(dyslang::ResourceRefBase)
 #undef dyslang_properties_get
 
 #ifdef __cplusplus
 #define dyslang_properties_set(TYPE) vbegin(void) set(dyslang::CString, const TYPE*, uint64_t) vend;
-        dyslang_properties_set(dyslang::u32)
-        dyslang_properties_set(dyslang::i32)
-        dyslang_properties_set(dyslang::u64)
-        dyslang_properties_set(dyslang::i64)
-        dyslang_properties_set(dyslang::f32)
-        dyslang_properties_set(dyslang::f64)
+        dyslang_properties_set(uint32_t)
+        dyslang_properties_set(int32_t)
+        dyslang_properties_set(uint64_t)
+        dyslang_properties_set(int64_t)
+        dyslang_properties_set(float)
+        dyslang_properties_set(double)
         //dyslang_properties_set(dyslang::ResourceRefBase)
 #undef dyslang_properties_set
 #elif defined __SLANG__ // [TODO] if problems with this function, look into using Ptr<TYPE, Access.Read> instead of TYPE*
 #define dyslang_properties_set(TYPE) vbegin(void) set(dyslang::CString, TYPE*, uint64_t) vend;
-            dyslang_properties_set(dyslang::u32)
-            dyslang_properties_set(dyslang::i32)
-            dyslang_properties_set(dyslang::u64)
-            dyslang_properties_set(dyslang::i64)
-            dyslang_properties_set(dyslang::f32)
-            dyslang_properties_set(dyslang::f64)
+            dyslang_properties_set(uint32_t)
+            dyslang_properties_set(int32_t)
+            dyslang_properties_set(uint64_t)
+            dyslang_properties_set(int64_t)
+            dyslang_properties_set(float)
+            dyslang_properties_set(double)
             //dyslang_properties_set(dyslang::ResourceRefBase)
 #undef dyslang_properties_set
 #endif
@@ -582,12 +492,12 @@ struct Properties {
     {
         using SupportedTypes = std::tuple<
             //std::vector<dyslang::ResourceRefBase>,
-			std::vector<u32>,
-			std::vector<i32>,
-			std::vector<u64>,
-			std::vector<i64>,
-            std::vector<f32>,
-            std::vector<f64>
+			std::vector<uint32_t>,
+			std::vector<int32_t>,
+			std::vector<uint64_t>,
+			std::vector<int64_t>,
+            std::vector<float>,
+            std::vector<double>
         >;
         using VariantType = tuple_to_variant<SupportedTypes>::type;
         // We don't need queryInterface for this impl, or ref counting
@@ -604,22 +514,22 @@ struct Properties {
         *count = value.size(); \
         *ptr = value.data(); \
     }
-        dyslang_properties_get(dyslang::u32)
-        dyslang_properties_get(dyslang::i32)
-        dyslang_properties_get(dyslang::u64)
-        dyslang_properties_get(dyslang::i64)
-        dyslang_properties_get(dyslang::f32)
-        dyslang_properties_get(dyslang::f64)
+        dyslang_properties_get(uint32_t)
+        dyslang_properties_get(int32_t)
+        dyslang_properties_get(uint64_t)
+        dyslang_properties_get(int64_t)
+        dyslang_properties_get(float)
+        dyslang_properties_get(double)
         //dyslang_properties_get(dyslang::ResourceRefBase)
 #undef dyslang_properties_get
 
 #define dyslang_properties_set(TYPE) vbegin(void) set(const dyslang::CString key, const TYPE* ptr, const uint64_t count) SLANG_OVERRIDE { properties[key] = std::vector<TYPE>{ ptr, ptr + count }; }
-        dyslang_properties_set(dyslang::u32)
-        dyslang_properties_set(dyslang::i32)
-    	dyslang_properties_set(dyslang::u64)
-        dyslang_properties_set(dyslang::i64)
-    	dyslang_properties_set(dyslang::f32)
-		dyslang_properties_set(dyslang::f64)
+        dyslang_properties_set(uint32_t)
+        dyslang_properties_set(int32_t)
+    	dyslang_properties_set(uint64_t)
+        dyslang_properties_set(int64_t)
+    	dyslang_properties_set(float)
+		dyslang_properties_set(double)
 		//dyslang_properties_set(dyslang::ResourceRefBase)
 #undef dyslang_properties_set
 

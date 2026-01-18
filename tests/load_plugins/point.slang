@@ -1,18 +1,18 @@
 #include "../../include/dyslang/dyslang.h"
 import emitter;
 
-struct PointLight<Real : dyslang::floating_point> : IEmitter<Real> {
-    dyslang::i32 id;
+struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
+    int id;
     vector<Real, 3> position;
     Real range;
     vector<Real, 3> color;
     Real intensity;
-    dyslang::m3x3<Real> transform;
+    matrix<Real, 3, 3> transform;
     // dyslang::ResourceRef<Texture2D> texture;
 
     __init(dyslang::Properties properties) {
         if (properties.has("id")) {
-            id = properties.get<dyslang::i32>("id");
+            id = properties.get<int>("id");
         } else id = -1;
 
         if (properties.has("position")) {
@@ -32,8 +32,8 @@ struct PointLight<Real : dyslang::floating_point> : IEmitter<Real> {
         } else intensity = Real(1.0);
 
         if (properties.has("transform")) {
-            transform = properties.get<dyslang::m3x3<Real>>("transform");
-        } else transform = dyslang::m3x3<Real>(1.0);
+            transform = properties.get<matrix<Real, 3, 3>>("transform");
+        } else transform = matrix<Real, 3, 3>(1.0);
 
         // if (properties.has("texture")) {
         //     texture = properties.get<Texture2D>("texture");
