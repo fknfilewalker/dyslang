@@ -414,45 +414,8 @@ namespace dyslang {
     };
 }
 
-
-#ifdef __SLANG__
-//[[vk::binding(0, 0)]]
-__DynamicResource<__DynamicResourceKind::General> __global_resource_array[];
-#endif
-// Host should set index for GPU texture array
-
 namespace dyslang
 {
-//#ifdef __cplusplus
-//	// todo limit to resource types
-//    template <typename T>
-//    concept resource = !always_false_v<T>;
-//#elif __SLANG__
-//    slang_internal typealias resource = __IDynamicResourceCastable<__DynamicResourceKind::General>;
-//#endif
-//
-//    struct ResourceRefBase {
-//        dyslang::i32 _idx;
-//        bool has() { return _idx >= 0; }
-//    };
-//#ifdef __cplusplus
-//    struct ResourceRef : ResourceRefBase
-//#elif __SLANG__
-//    __generic<__concept(resource, T)> slang_internal struct ResourceRef : ResourceRefBase
-//#endif
-//    {
-//#ifdef __cplusplus
-//        dyslang::i32 get() { return _idx; }
-//#elif __SLANG__
-//    	T get() { return __global_resource_array[_idx].as<T>(); }
-//#endif
-//    };
-//
-//#if __SLANG__
-//    __generic<__concept(ITexelElement, T)> slang_internal typealias Texture2DRef = dyslang::ResourceRef<Texture2D<T>>;
-//    __generic<__concept(ITexelElement, T)> slang_internal typealias Sampler2DRef = dyslang::ResourceRef<Sampler2D<T>>;
-//#endif
-
     slangInterfaceUUID(
         internal,
         IProperties,

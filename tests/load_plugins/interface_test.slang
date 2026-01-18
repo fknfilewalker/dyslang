@@ -1,5 +1,8 @@
 import emitter;
 
+[vk::binding(0, 0)]
+__DynamicResource<__DynamicResourceKind::General> __global_resource_array[];
+
 StructuredBuffer<IEmitter<float>> emitters;
 RWStructuredBuffer<float> outputBuffer;
 

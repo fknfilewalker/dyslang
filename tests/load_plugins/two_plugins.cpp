@@ -46,18 +46,18 @@ int main(int argc, char* argv[]) {
     std::vector<dyslang::Slangc::ArgPair> defines;
     // compile
     dyslang::Slangc slangc{ includes, defines };
-    std::string_view moduleName = "tests/load_plugins/interface_test";
-    slangc.addModule(moduleName);
-    slangc.addModule(point_plugin.implementation_name, point_plugin.implementation_name, point_plugin.slang_module_blob());
-    slangc.addModule(spot_plugin.implementation_name, spot_plugin.implementation_name, spot_plugin.slang_module_blob());
-    slangc.addEntryPoint(moduleName, "main");
-    slangc.finalizeModulesAndEntryPoints();
-	auto bindings = slangc.globalResourceArrayBinding();
-	std::cout << "Global Resource Array: Binding: " << bindings.first << ", Set: " << bindings.second << "\n\n";
-    slangc.addTypeConformance(point_light->interface_name, point_light->implementation_name);
-    slangc.addTypeConformance(spot_light->interface_name, spot_light->implementation_name);
-    dyslang::Slangc::Hash hash = slangc.compose();
-    std::vector<uint8_t> output = slangc.compile();
+    slangc.add_module("tests/load_plugins/interface_test", { "main" });
+    slangc.add_module(point_plugin.implementation_name, point_plugin.implementation_name, point_plugin.slang_module_blob());
+    slangc.add_module(spot_plugin.implementation_name, spot_plugin.implementation_name, spot_plugin.slang_module_blob());
+    slangc = slangc.compose();
+	uint32_t binding = 0, space = 0;
+    slangc.get_global_resource_array_binding(binding, space);
+	std::cout << "Global Resource Array: Binding: " << binding << ", Set: " << space << "\n\n";
+    slangc.add_type_conformance(point_light->interface_name, point_light->implementation_name);
+    slangc.add_type_conformance(spot_light->interface_name, spot_light->implementation_name);
+    dyslang::Slangc::Hash hash;
+    slangc = slangc.compose().hash(0, hash);
+    std::vector<uint8_t> output = slangc.glsl();
 
     for (const auto& o : output) {
         std::cout << o;

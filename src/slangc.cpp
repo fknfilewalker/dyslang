@@ -10,18 +10,18 @@
 
 using namespace dyslang;
 namespace {
-    void checkError(slang::IBlob* diagnosticsBlob)
+    void checkError(slang::IBlob* diagnostics_blob)
     {
-        if (diagnosticsBlob != nullptr)
+        if (diagnostics_blob != nullptr)
         {
-            printf("%s", static_cast<const char*>(diagnosticsBlob->getBufferPointer()));
+            printf("%s", static_cast<const char*>(diagnostics_blob->getBufferPointer()));
         }
-        diagnosticsBlob = nullptr;
+        diagnostics_blob = nullptr;
     }
 
     std::string bytesToString(const void* data, const size_t len)
     {
-	    const auto p = static_cast<const uint8_t*>(data);
+        const auto p = static_cast<const uint8_t*>(data);
         std::stringstream ss;
         ss << std::hex;
 
@@ -32,180 +32,197 @@ namespace {
     }
 }
 
-struct Slangc::SlangcPrivate
+struct dyslang::SlangComposerPrivate
 {
-    Slang::ComPtr<slang::ISession> _session;
-    Slang::ComPtr<slang::IBlob> _diagnosticsBlob;
-    std::unordered_map<std::string_view, slang::IComponentType*> _modules;
-    std::vector<slang::IComponentType*> _entryPoints;
-    std::vector<slang::ITypeConformance*> _typeConformances;
-    std::vector<slang::IComponentType*> _programComponents;
-    Slang::ComPtr<slang::IComponentType> _tempProgram;
-    Slang::ComPtr<slang::IComponentType> _composedProgram;
+    Slang::ComPtr<slang::ISession> session;
+    std::vector<Slang::ComPtr<slang::IComponentType>> components;
+    Slang::ComPtr<slang::IBlob> diagnosticsBlob;
+
+    void add_component(slang::IComponentType* ct) { components.push_back(Slang::ComPtr{ ct }); }
+
+    std::shared_ptr<SlangComposerPrivate> compose()
+    {
+        Slang::ComPtr<slang::IComponentType> composition;
+        const SlangResult result = session->createCompositeComponentType(
+            reinterpret_cast<slang::IComponentType**>(components.data()),
+            components.size(),
+            composition.writeRef(),
+            diagnosticsBlob.writeRef());
+        checkError(diagnosticsBlob);
+        if (SLANG_FAILED(result)) throw std::runtime_error("slang: composition error");
+
+        return std::make_shared<SlangComposerPrivate>( session, std::vector{ composition }, Slang::ComPtr<slang::IBlob>());
+    }
 };
 
-Slangc::Slangc(const std::vector<const char*>& includes, const std::vector<Slangc::ArgPair>& defines) : _p{ new SlangcPrivate() }
+Slangc::Slangc(const std::vector<const char*>& includes, const std::vector<ArgPair>& defines) : _p{ new SlangComposerPrivate() }
 {
-    if (!slangGlobalSession) {
-        if (SLANG_FAILED(slang::createGlobalSession(slangGlobalSession.writeRef()))) throw std::runtime_error("slang: error creating global session");
+    static Slang::ComPtr<slang::IGlobalSession> globalSession;
+    if (!globalSession) {
+        if (SLANG_FAILED(slang::createGlobalSession(globalSession.writeRef()))) throw std::runtime_error("slang: error creating global session");
     }
 
     std::vector<slang::CompilerOptionEntry> copts{
-        {.name = slang::CompilerOptionName::VulkanUseEntryPointName, .value = {slang::CompilerOptionValueKind::Int, 1}},
-        {.name = slang::CompilerOptionName::LanguageVersion, .value = {slang::CompilerOptionValueKind::Int, 2026}},
-		{.name = slang::CompilerOptionName::EnableExperimentalDynamicDispatch, .value = {slang::CompilerOptionValueKind::Int, 1}}
-        //{slang::CompilerOptionName::MinimumSlangOptimization, {slang::CompilerOptionValueKind::Int, 1} },
-        //{slang::CompilerOptionName::DebugInformation, {slang::CompilerOptionValueKind::Int, SlangDebugInfoLevel::SLANG_DEBUG_INFO_LEVEL_MAXIMAL}}
+        {slang::CompilerOptionName::VulkanUseEntryPointName, {slang::CompilerOptionValueKind::Int, 1}},
+        // {slang::CompilerOptionName::VulkanInvertY, {slang::CompilerOptionValueKind::Int, 1}},
+        {slang::CompilerOptionName::EmitSpirvDirectly, {slang::CompilerOptionValueKind::Int, 1}},
+        {slang::CompilerOptionName::IgnoreCapabilities, {slang::CompilerOptionValueKind::Int, 1}},
+        {slang::CompilerOptionName::LanguageVersion,  {slang::CompilerOptionValueKind::Int, 2026}},
+        {slang::CompilerOptionName::EnableExperimentalDynamicDispatch, {slang::CompilerOptionValueKind::Int, 1}},
+        // {slang::CompilerOptionName::MinimumSlangOptimization, {slang::CompilerOptionValueKind::Int, 1} },
+        // {slang::CompilerOptionName::DebugInformation, {slang::CompilerOptionValueKind::Int, SlangDebugInfoLevel::SLANG_DEBUG_INFO_LEVEL_MAXIMAL}},
+        // {slang::CompilerOptionName::Capability, {slang::CompilerOptionValueKind::String, 0, 0, "spvBindlessTextureNV"} },
+        // {slang::CompilerOptionName::DisableWarning, {slang::CompilerOptionValueKind::String, 0, 0, "41203"}}, // reinterpret<> into not equally sized types
+        {slang::CompilerOptionName::Optimization, {slang::CompilerOptionValueKind::Int, 1}},
     };
 
-    slang::SessionDesc sessionDesc = {};
     slang::TargetDesc targetDesc = {};
     if (true) {
         targetDesc.format = SLANG_GLSL;
-        targetDesc.profile = slangGlobalSession->findProfile("glsl460");
+        targetDesc.profile = globalSession->findProfile("glsl460");
     }
     else {
         targetDesc.format = SLANG_SPIRV;
-        targetDesc.profile = slangGlobalSession->findProfile("spirv_1_5");
+        targetDesc.profile = globalSession->findProfile("spirv_1_6");
         targetDesc.flags = SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY;
     }
+
+    slang::SessionDesc sessionDesc = {};
     sessionDesc.targets = &targetDesc;
     sessionDesc.targetCount = 1;
-    sessionDesc.allowGLSLSyntax = true;
+    sessionDesc.compilerOptionEntries = copts.data();
+    sessionDesc.compilerOptionEntryCount = static_cast<SlangInt>(copts.size());
+    //sessionDesc.allowGLSLSyntax = true;
+    sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_ROW_MAJOR;
     sessionDesc.searchPathCount = static_cast<SlangInt>(includes.size());
     sessionDesc.searchPaths = includes.data();
-    sessionDesc.compilerOptionEntries = copts.data();
-    sessionDesc.compilerOptionEntryCount = static_cast<uint32_t>(copts.size());
     sessionDesc.preprocessorMacroCount = static_cast<SlangInt>(defines.size());
     sessionDesc.preprocessorMacros = reinterpret_cast<const slang::PreprocessorMacroDesc*>(defines.data());
 
-    if (SLANG_FAILED(slangGlobalSession->createSession(sessionDesc, _p->_session.writeRef()))) throw std::runtime_error("slang: error creating session");
+    if (SLANG_FAILED(globalSession->createSession(sessionDesc, _p->session.writeRef()))) throw std::runtime_error("slang: error creating session");
 }
 
-Slangc::~Slangc()
+Slangc::Slangc(const Slangc& other)
 {
-    delete _p;
-    _p = nullptr;
+    _p = std::make_shared<SlangComposerPrivate>(other._p->session, other._p->components);
 }
 
-void Slangc::addModule(const std::string_view moduleName) const
+Slangc& Slangc::add_module(const std::string_view module_name, const std::vector<std::string_view>& entry_points)
 {
-    slang::IModule* module = _p->_session->loadModule(moduleName.data(), _p->_diagnosticsBlob.writeRef());
-    checkError(_p->_diagnosticsBlob);
-    if (!module) throw std::runtime_error("slang: module null");
-    _p->_modules[moduleName] = module;
+    slang::IModule* mod = _p->session->loadModule(module_name.data(), _p->diagnosticsBlob.writeRef());
+    checkError(_p->diagnosticsBlob);
+    if (!mod) throw std::runtime_error("slang: module null");
+    _p->add_component(mod);
+
+    for (const auto& entry_point : entry_points) {
+        slang::IEntryPoint* entryPoint;
+        const SlangResult result = mod->findEntryPointByName(entry_point.data(), &entryPoint);
+        if (SLANG_FAILED(result)) throw std::runtime_error("slang: entrypoint");
+        if (!entryPoint) throw std::runtime_error("slang: entrypoint null");
+        _p->add_component(entryPoint);
+    }
+
+    return *this;
 }
 
-void Slangc::addModule(std::string_view moduleName, std::string_view modulePath, const void* blob) const {
-    slang::IModule* module = _p->_session->loadModuleFromIRBlob(moduleName.data(), modulePath.data(), (slang::IBlob*)blob, _p->_diagnosticsBlob.writeRef());
-    checkError(_p->_diagnosticsBlob);
-    if (!module) throw std::runtime_error("slang: module null");
-    _p->_modules[moduleName] = module;
+Slangc& Slangc::add_module(std::string_view module_name, std::string_view module_path, const void* blob) {
+    slang::IModule* mod = _p->session->loadModuleFromIRBlob(module_name.data(), module_path.data(), (slang::IBlob*)blob, _p->diagnosticsBlob.writeRef());
+    checkError(_p->diagnosticsBlob);
+    if (!mod) throw std::runtime_error("slang: module null");
+    _p->add_component(mod);
+    return *this;
 }
 
-void Slangc::addEntryPoint(const std::string_view moduleName, const std::string_view entryPointName) const
+Slangc& Slangc::add_type_conformance(std::string_view interface_type, std::string_view conformance_type,
+	int64_t id_override)
 {
-    Slang::ComPtr<slang::IEntryPoint> entryPoint;
-    ((slang::IModule*)_p->_modules.at(moduleName))->findEntryPointByName(entryPointName.data(), entryPoint.writeRef());
-    if (!entryPoint) throw std::runtime_error("slang: entrypoint null");
-    _p->_entryPoints.push_back(entryPoint);
+    slang::ProgramLayout* layout = _p->components.front()->getLayout();
+    slang::TypeReflection* t = layout->findTypeByName(conformance_type.data());
+    slang::TypeReflection* it = layout->findTypeByName(interface_type.data());
+
+    slang::ITypeConformance* tc;
+    const SlangResult result = _p->session->createTypeConformanceComponentType(
+        t, it, &tc, id_override, _p->diagnosticsBlob.writeRef());
+    checkError(_p->diagnosticsBlob);
+    if (SLANG_FAILED(result)) throw std::runtime_error("slang: type conformance error");
+    _p->add_component(tc);
+    return *this;
 }
 
-void Slangc::finalizeModulesAndEntryPoints() const
+Slangc Slangc::compose() const
 {
-    Slang::ComPtr<slang::IComponentType> tempProgram;
-
-    std::vector<slang::IComponentType*> componentTypes;
-    std::vector<slang::IComponentType*> modules;
-    modules.reserve(_p->_modules.size());
-
-    for (const auto& kv : _p->_modules) modules.push_back(kv.second);
-
-    componentTypes.insert(componentTypes.end(), modules.begin(), modules.end());
-    componentTypes.insert(componentTypes.end(), _p->_entryPoints.begin(), _p->_entryPoints.end());
-
-    const SlangResult result = _p->_session->createCompositeComponentType(
-        componentTypes.data(),
-        componentTypes.size(),
-        tempProgram.writeRef(),
-        _p->_diagnosticsBlob.writeRef());
-    checkError(_p->_diagnosticsBlob);
-    if (SLANG_FAILED(result)) throw std::runtime_error("slang: composition error");
-
-    _p->_modules.clear();
-    _p->_entryPoints.clear();
-    _p->_programComponents.clear();
-
-    _p->_programComponents.push_back(tempProgram);
-    _p->_tempProgram = tempProgram;
+    return Slangc { _p->compose() };
 }
 
-std::pair<unsigned, unsigned> Slangc::globalResourceArrayBinding() const
+Slangc& Slangc::hash(uint32_t entry, Hash& hash) {
+    Slang::ComPtr<slang::IBlob> hashBlob;
+    _p->components.front()->getEntryPointHash(entry, 0, hashBlob.writeRef());
+    hash = bytesToString(hashBlob->getBufferPointer(), hashBlob->getBufferSize());
+    return *this;
+}
+
+std::vector<uint32_t> Slangc::spv() const
 {
-	auto layout = _p->_tempProgram->getLayout(0, _p->_diagnosticsBlob.writeRef());
-	checkError(_p->_diagnosticsBlob);
+    Slang::ComPtr<slang::IBlob> blob;
+    const SlangResult result = _p->components.front()->getTargetCode(0, blob.writeRef(), _p->diagnosticsBlob.writeRef());
+    checkError(_p->diagnosticsBlob);
+    if (result != 0) throw std::runtime_error("slang: target code error");
+    std::vector<uint32_t> out(blob->getBufferSize() / sizeof(uint32_t), 0);
+    std::memcpy(out.data(), blob->getBufferPointer(), blob->getBufferSize());
+    return out;
+}
+
+std::vector<uint8_t> Slangc::glsl() const
+{
+    Slang::ComPtr<slang::IBlob> blob;
+    const SlangResult result = _p->components.front()->getTargetCode(0, blob.writeRef(), _p->diagnosticsBlob.writeRef());
+    checkError(_p->diagnosticsBlob);
+    if (result != 0) throw std::runtime_error("slang: target code error");
+    std::vector<uint8_t> out(blob->getBufferSize(), 0);
+    std::memcpy(out.data(), blob->getBufferPointer(), blob->getBufferSize());
+    return out;
+}
+
+std::vector<uint32_t> Slangc::entry(uint32_t entry) const
+{
+    Slang::ComPtr<slang::IBlob> code;
+    const SlangResult result = _p->components.front()->getEntryPointCode(
+        entry, 0, code.writeRef(), _p->diagnosticsBlob.writeRef()
+    );
+    checkError(_p->diagnosticsBlob);
+    if (result != 0) throw std::runtime_error("slang: entrypoint code error");
+    std::vector<uint32_t> out(code->getBufferSize() / sizeof(uint32_t), 0);
+    std::memcpy(out.data(), code->getBufferPointer(), code->getBufferSize());
+    return out;
+}
+
+std::array<uint32_t, 6> Slangc::get_rtti_bytes(std::string_view interface_type, std::string_view conformance_type) const
+{
+    std::array<uint32_t, 6> rtti = {};
+    auto layout = _p->components.front()->getLayout(0);
+    slang::TypeReflection* t = layout->findTypeByName(conformance_type.data());
+    slang::TypeReflection* it = layout->findTypeByName(interface_type.data());
+    auto result = _p->session->getDynamicObjectRTTIBytes(t, it, rtti.data(), sizeof(uint32_t) * rtti.size());
+    if (SLANG_FAILED(result)) throw std::runtime_error("slang: rtti bytes error");
+    return rtti;
+}
+
+Slangc& Slangc::get_global_resource_array_binding(uint32_t& binding, uint32_t& space)
+{
+    auto layout = _p->components.front()->getLayout(0, _p->diagnosticsBlob.writeRef());
+    checkError(_p->diagnosticsBlob);
     if (!layout) throw std::runtime_error("slang: layout null");
-    unsigned parameterCount = layout->getParameterCount();
+    const unsigned parameterCount = layout->getParameterCount();
     for (unsigned pp = 0; pp < parameterCount; pp++)
     {
         slang::VariableLayoutReflection* parameter = layout->getParameterByIndex(pp);
-		const std::string name = parameter->getName();
+        const std::string name = parameter->getName();
         if (name == "__global_resource_array")
         {
-            unsigned binding = parameter->getBindingIndex();
-            unsigned space = parameter->getBindingSpace();
-            return { binding, space };
+            binding = parameter->getBindingIndex();
+            space = parameter->getBindingSpace();
+            return *this;
         }
-        int x = 2;
     }
     throw std::runtime_error("slang: __global_resource_array not found");
-}
-
-void Slangc::addTypeConformance(const std::string_view type, const std::string_view conformance, int64_t id_override) const
-{
-    slang::ProgramLayout* layout = _p->_tempProgram->getLayout();
-    slang::TypeReflection* t = layout->findTypeByName(type.data());
-    slang::TypeReflection* c = layout->findTypeByName(conformance.data());
-
-    slang::ITypeConformance* t_c;
-    const SlangResult result = _p->_session->createTypeConformanceComponentType(
-        c,
-        t,
-        &t_c,
-        id_override,
-        _p->_diagnosticsBlob.writeRef());
-    checkError(_p->_diagnosticsBlob);
-    if (SLANG_FAILED(result)) throw std::runtime_error("slang: type conformance error");
-    _p->_typeConformances.push_back(t_c);
-}
-
-Slangc::Hash Slangc::compose() const
-{
-    _p->_programComponents.insert(_p->_programComponents.end(), _p->_typeConformances.begin(), _p->_typeConformances.end());
-
-    const SlangResult result = _p->_session->createCompositeComponentType(
-        _p->_programComponents.data(),
-        _p->_programComponents.size(),
-        _p->_composedProgram.writeRef(),
-        _p->_diagnosticsBlob.writeRef());
-    checkError(_p->_diagnosticsBlob);
-    if (SLANG_FAILED(result)) throw std::runtime_error("slang: composition error");
-
-    Slang::ComPtr<slang::IBlob> hash;
-    _p->_composedProgram->getEntryPointHash(0, 0, hash.writeRef());
-    return bytesToString(hash->getBufferPointer(), hash->getBufferSize());
-}
-
-std::vector<uint8_t> Slangc::compile() const
-{
-    Slang::ComPtr<slang::IBlob> spirvCode;
-    const SlangResult result = _p->_composedProgram->getEntryPointCode(
-        0, 0, spirvCode.writeRef(), _p->_diagnosticsBlob.writeRef()
-    );
-    checkError(_p->_diagnosticsBlob);
-    if (result != 0) return {};
-
-    std::vector<uint8_t> out(spirvCode->getBufferSize(), 0);
-    std::memcpy(out.data(), spirvCode->getBufferPointer(), out.size());
-    return out;
 }

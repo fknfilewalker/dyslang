@@ -10,12 +10,13 @@ int main(int argc, char* argv[]) {
 
     Slangc slangc{ includes, defines };
     std::string_view moduleName = "tests/slang_interface_type_conformance/interface_from_buffer";
-    slangc.addModule(moduleName);
-    slangc.addEntryPoint(moduleName, "main");
-    slangc.finalizeModulesAndEntryPoints();
-    slangc.addTypeConformance("IFoo", "Impl1");
-    Slangc::Hash hash = slangc.compose();
-    std::vector<uint8_t> output = slangc.compile();
+    slangc.add_module(moduleName, { "main" });
+    slangc = slangc.compose();
+    slangc.add_type_conformance("IFoo", "Impl1");
+    slangc.add_type_conformance("IFoo", "Impl2");
+    dyslang::Slangc::Hash hash;
+    slangc = slangc.compose().hash(0, hash);
+    std::vector<uint8_t> output = slangc.glsl();
 
     for (auto& o : output) {
         std::cout << o;
