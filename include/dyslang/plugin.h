@@ -68,16 +68,23 @@ namespace dyslang
     };
 
     struct ObjectData {
-        static constexpr size_t virtual_table_offset = 4 * sizeof(uint32_t);
-        explicit ObjectData(const size_t data_size) : data(data_size + virtual_table_offset) {}
-        uint8_t* get_virtual_table_ptr() { return data.data(); }
-        uint8_t* get_data_ptr() { return data.data() + virtual_table_offset; }
-        [[nodiscard]] static size_t get_virtual_table_size() { return virtual_table_offset; }
-        [[nodiscard]] size_t get_data_size() const { return data.size() - virtual_table_offset; }
+        static constexpr size_t rtti_header_size = 4u * sizeof(uint32_t);
+        explicit ObjectData(const size_t data_size) : data(data_size + rtti_header_size) {}
+        uint8_t* get_rtti_header_ptr() { return data.data(); }
+        uint8_t* get_data_ptr() { return data.data() + rtti_header_size; }
+        [[nodiscard]] size_t get_data_size() const { return data.size() - rtti_header_size; }
         [[nodiscard]] size_t get_size() const { return data.size(); }
-        // todo check if correct offset
-        void set_type_conformance_index(const uint32_t index) { *reinterpret_cast<uint32_t*>(data.data() + 3 * sizeof(uint32_t)) = index; }
-		[[nodiscard]] uint32_t get_type_conformance_index() const { return *reinterpret_cast<const uint32_t*>(data.data() + 3 * sizeof(uint32_t)); }
+        // from slang/slang-session.cpp
+        // Slang RTTI header format:
+        // byte 0-7: pointer to RTTI struct describing the type. (not used for now, set to 1 for valid
+        // types, and 0 to represent null).
+        // byte 8-11: 32-bit sequential ID of the type conformance witness.
+        // byte 12-15: unused.
+        void set_type_conformance_index(const uint32_t index) { 
+            *reinterpret_cast<uint32_t*>(data.data() + 0u * sizeof(uint32_t)) = 1;
+            *reinterpret_cast<uint32_t*>(data.data() + 2u * sizeof(uint32_t)) = index;
+        }
+		[[nodiscard]] uint32_t get_type_conformance_index() const { return *reinterpret_cast<const uint32_t*>(data.data() + 2u * sizeof(uint32_t)); }
 
         std::vector<uint8_t> data;
     };
@@ -97,7 +104,7 @@ namespace dyslang
         }
 
         [[nodiscard]] std::string to_string() const {
-            return "Object:\n Interface: " + interface_name + "\n Implementation: " + implementation_name + "\n Variant: " + variant + "\n VTable Size: " + std::to_string(data.get_virtual_table_size()) + " Bytes\n Data Size: " + std::to_string(data.get_data_size()) + " Bytes\n Total Size: " + std::to_string(data.get_size()) + " Bytes\n";
+            return "Object:\n Interface: " + interface_name + "\n Implementation: " + implementation_name + "\n Variant: " + variant + "\n Conformance Index: " + std::to_string(data.get_type_conformance_index()) + "\n RTTI Header Size: " + std::to_string(data.rtti_header_size) + " Bytes\n Data Size: " + std::to_string(data.get_data_size()) + " Bytes\n Total Size: " + std::to_string(data.get_size()) + " Bytes\n";
         }
 
         Plugin& plugin;
