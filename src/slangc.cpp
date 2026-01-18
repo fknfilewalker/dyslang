@@ -106,7 +106,7 @@ void Slangc::addModule(std::string_view moduleName, std::string_view modulePath,
 void Slangc::addEntryPoint(const std::string_view moduleName, const std::string_view entryPointName) const
 {
     Slang::ComPtr<slang::IEntryPoint> entryPoint;
-    dynamic_cast<slang::IModule*>(_p->_modules.at(moduleName))->findEntryPointByName(entryPointName.data(), entryPoint.writeRef());
+    ((slang::IModule*)_p->_modules.at(moduleName))->findEntryPointByName(entryPointName.data(), entryPoint.writeRef());
     if (!entryPoint) throw std::runtime_error("slang: entrypoint null");
     _p->_entryPoints.push_back(entryPoint);
 }

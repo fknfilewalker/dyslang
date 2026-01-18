@@ -53,6 +53,16 @@ if(MSVC)
 else()
 endif()
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    if (APPLE)
+        set(LLVM_LIBRARY_DIR "/opt/homebrew/opt/llvm/lib")
+        # Homebrew deploys libc++ along with the llvm package. We must point to it
+        # otherwise clang will use the header files of the package and link to
+        # system libc++. See llvm/llvm-project#155531 and Homebrew/homebrew-core#235411
+        link_directories(${LLVM_LIBRARY_DIR}/c++)
+    endif()
+endif ()
+
 if(WIN32)
 	add_definitions(-DNOMINMAX)
 endif()
