@@ -159,21 +159,18 @@ _GENERIC \
 struct _NAME : public ISlangUnknown { \
 _UUID
 
+#define pub
 #define __generic template
-#define __concept(TYPE, VAR) TYPE VAR
+#define concept(TYPE, VAR) TYPE VAR
 #define annotations(...)
-#define init(NAME) NAME
 #define interface struct
-#define typealias using
-
 #define vbegin(RETURN) virtual SLANG_NO_THROW RETURN SLANG_MCALL  // for interface methods
 #define vend = 0        // for interface methods
 
 #elif defined(__SLANG__)
-
-#define __concept(TYPE, VAR) VAR : TYPE
+#define pub public
+#define concept(TYPE, VAR) VAR : TYPE
 #define annotations(...) [__VA_ARGS__]
-#define init(NAME) __init
 #define vbegin(RETURN) RETURN
 #define vend
 
@@ -263,29 +260,6 @@ namespace dyslang {
 
     template <arithmetic T, size_t N> using vector = std::array<T, N>;
     template <arithmetic T, size_t R, size_t C> using matrix = std::array<vector<T, C>, R>;
-    /*template <arithmetic T, size_t R, size_t C> struct matrix {
-        static constexpr int rows_v = R;
-        static constexpr int columns_v = C;
-        static constexpr int length_v = R * C;
-        using vector_t = vector<T, C>;
-
-        template <typename... Ts>
-        matrix(Ts... ts) requires(sizeof...(ts) == length_v)
-        {
-            int i = 0;
-            ((entries[i++] = static_cast<T>(ts)), ...);
-        }
-    	const T* data() const { return entries.data(); }
-
-		operator std::array<vector<T, C>, R>& () { return rows; }
-        union
-        {
-            std::array<vector<T, C>, R> rows;
-            vector<T, length_v> entries;
-        };
-    };*/
-
-    inline constexpr auto none = std::nullopt;
 
     // glsl/hlsl/slang bool is 32 bits
     // c++ bool is 8 bits
@@ -315,9 +289,9 @@ namespace dyslang {
         Optional& operator=(const std::nullopt_t&) { value = {}; hasValue = 0; return *this; }
     };
 }
-
 #else
 namespace dyslang {
+    typealias arithmetic = __BuiltinArithmeticType;
 	typealias b32 = uint32_t;
 	typealias CString = NativeString;
 }
@@ -350,6 +324,12 @@ namespace dyslang
         dyslang_properties_set(double)
 #undef dyslang_properties_set
 	};
+
+    __generic<typename T>
+    pub struct DynamicArray {
+        pub T* data;
+        pub uint64_t size;
+    };
 
 #ifdef __SLANG_CPP__
 
