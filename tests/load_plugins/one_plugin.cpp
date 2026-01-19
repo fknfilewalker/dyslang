@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
     slangc.add_type_conformance(light->interface_name, light->implementation_name, conformance_id);
     dyslang::Slangc::Hash hash;
     slangc = slangc.compose().hash(0, hash);
-    std::vector<uint8_t> output = slangc.glsl();
+    auto output = slangc.glsl();
 
     for (const auto& o : output) {
         std::cout << o;

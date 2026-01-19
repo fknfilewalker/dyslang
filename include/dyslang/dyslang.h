@@ -159,7 +159,6 @@ _GENERIC \
 struct _NAME : public ISlangUnknown { \
 _UUID
 
-#define pub
 #define __generic template
 #define concept(TYPE, VAR) TYPE VAR
 #define annotations(...)
@@ -168,7 +167,6 @@ _UUID
 #define vend = 0        // for interface methods
 
 #elif defined(__SLANG__)
-#define pub public
 #define concept(TYPE, VAR) VAR : TYPE
 #define annotations(...) [__VA_ARGS__]
 #define vbegin(RETURN) RETURN
@@ -326,9 +324,9 @@ namespace dyslang
 	};
 
     __generic<typename T>
-    pub struct DynamicArray {
-        pub T* data;
-        pub uint64_t size;
+    struct DynamicArray {
+        T* data;
+        uint64_t size;
     };
 
 #ifdef __SLANG_CPP__

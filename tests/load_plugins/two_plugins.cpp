@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
     slangc.add_type_conformance(spot_light->interface_name, spot_light->implementation_name);
     dyslang::Slangc::Hash hash;
     slangc = slangc.compose().hash(0, hash);
-    std::vector<uint8_t> output = slangc.glsl();
+    auto output = slangc.glsl();
 
     for (const auto& o : output) {
         std::cout << o;

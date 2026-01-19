@@ -9,7 +9,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
     Real intensity;
     matrix<Real, 3, 3> transform;
     Real arr[10];
-    // dyslang::ResourceRef<Texture2D> texture;
+    // dyslang::DynamicArray<Real> dyn_arr;
 
     __init(dyslang::Properties properties) {
         if (properties.has("id")) {

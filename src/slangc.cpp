@@ -76,20 +76,17 @@ Slangc::Slangc(const std::vector<const char*>& includes, const std::vector<ArgPa
         {slang::CompilerOptionName::Optimization, {slang::CompilerOptionValueKind::Int, 1}},
     };
 
-    slang::TargetDesc targetDesc = {};
-    if (true) {
-        targetDesc.format = SLANG_GLSL;
-        targetDesc.profile = globalSession->findProfile("glsl460");
-    }
-    else {
-        targetDesc.format = SLANG_SPIRV;
-        targetDesc.profile = globalSession->findProfile("spirv_1_6");
-        targetDesc.flags = SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY;
-    }
+    slang::TargetDesc targetDesc[2] = {};
+    targetDesc[0].format = SLANG_GLSL;
+    targetDesc[0].profile = globalSession->findProfile("glsl460");
+
+    targetDesc[1].format = SLANG_SPIRV;
+    targetDesc[1].profile = globalSession->findProfile("spirv_1_6");
+    targetDesc[1].flags = SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY;
 
     slang::SessionDesc sessionDesc = {};
-    sessionDesc.targets = &targetDesc;
-    sessionDesc.targetCount = 1;
+    sessionDesc.targets = &targetDesc[0];
+    sessionDesc.targetCount = 2;
     sessionDesc.compilerOptionEntries = copts.data();
     sessionDesc.compilerOptionEntryCount = static_cast<SlangInt>(copts.size());
     //sessionDesc.allowGLSLSyntax = true;
@@ -164,7 +161,7 @@ Slangc& Slangc::hash(uint32_t entry, Hash& hash) {
 std::vector<uint32_t> Slangc::spv() const
 {
     Slang::ComPtr<slang::IBlob> blob;
-    const SlangResult result = _p->components.front()->getTargetCode(0, blob.writeRef(), _p->diagnosticsBlob.writeRef());
+    const SlangResult result = _p->components.front()->getTargetCode(1, blob.writeRef(), _p->diagnosticsBlob.writeRef());
     checkError(_p->diagnosticsBlob);
     if (result != 0) throw std::runtime_error("slang: target code error");
     std::vector<uint32_t> out(blob->getBufferSize() / sizeof(uint32_t), 0);
