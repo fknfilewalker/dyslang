@@ -602,12 +602,12 @@ struct Properties {
                         size_t index = 0;
 
                         if (value.dimension[2]) result += "[";
-                        for (size_t i = 0; i < std::max(1ull, value.dimension[2]); ++i) {
+                        for (size_t i = 0; i < std::max(size_t(1), value.dimension[2]); ++i) {
                             if (value.dimension[1]) result += "[";
-                            for (size_t j = 0; j < std::max(1ull, value.dimension[1]); ++j) {
+                            for (size_t j = 0; j < std::max(size_t(1), value.dimension[1]); ++j) {
                                 if (value.dimension[0]) result += "[";
                                 std::string sep;
-                                for (size_t k = 0; k < std::max(1ull, value.dimension[0]); ++k) {
+                                for (size_t k = 0; k < std::max(size_t(1), value.dimension[0]); ++k) {
                                     result += sep + std::to_string(ptr[index]);
                                     index++;
                                     sep = " ";
