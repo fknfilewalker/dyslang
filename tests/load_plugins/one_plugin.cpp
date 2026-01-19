@@ -17,18 +17,35 @@ int main(int argc, char* argv[]) {
     dyslang::Plugin plugin{ (path / "plugins/point").string() };
     std::cout << plugin.to_string() << '\n';
 
-	// set properties 
+    auto a = dyslang::detail::get_dims_v<double>;
+    auto aa = dyslang::detail::get_dims_v<std::array<double, 3>>;
+    auto aaa = dyslang::detail::get_dims_v<std::array<std::array<double, 3>, 4>>;
+    auto aaaa = dyslang::detail::get_dims_v<std::array<std::array<std::array<double, 3>, 4>, 5>>;
+
+    auto b = dyslang::detail::get_stride_v<double>;
+    auto bb = dyslang::detail::get_stride_v<std::array<double, 3>>;
+    auto bbb = dyslang::detail::get_stride_v<std::array<std::array<double, 3>, 4>>;
+    auto bbbb = dyslang::detail::get_stride_v<std::array<std::array<std::array<double, 3>, 4>, 5>>;
+
+    // set properties
+	auto id = 777;
+	auto position = std::array<Real, 3>{ 10.0f, 17.0f, 13.0f };
+	auto color = std::array<Real, 3>{ 3.0f, 4.0, 1000 };
+	auto intensity = static_cast<Real>(15.0f);
+    auto transform = dyslang::matrix<Real, 3, 3>{
+        1.0f, 2.0f, 3.0f,
+        4.0f, 5.0f, 6.0f,
+        7.0f, 8.0f, 9.0f
+	};
     dyslang::Properties props_in;
-	props_in.set("id", 777);
-    props_in.set("position", std::array<Real, 3>{ 10.0f, 10.0f, 13.0f });
-    props_in.set("color", std::array<Real, 3>{ 3.0f, 4.0, 1000 });
-    props_in.set("intensity", Real(15.0f));
-    props_in.set("transform", dyslang::matrix<Real, 3, 3>{
-        1.0f, 0.0, 0.0,
-    	0.0f, 1.0, 0.0,
-    	0.0f, 0.0, 1.0
-    });
-    //props_in.set("texture", dyslang::ResourceRef{ 1 });
+    props_in.set("id", id);
+    props_in.set("position", position);
+	props_in.set("color", color);
+	props_in.set("intensity", intensity);
+	props_in.set("transform", transform);
+
+    auto& g = props_in.get<std::array<Real, 3>>("color");
+    g[0] = 11199;
     std::cout << "IN:" << props_in.to_string() << '\n';
 
     // create object

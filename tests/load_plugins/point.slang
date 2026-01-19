@@ -8,6 +8,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
     vector<Real, 3> color;
     Real intensity;
     matrix<Real, 3, 3> transform;
+    Real arr[10];
     // dyslang::ResourceRef<Texture2D> texture;
 
     __init(dyslang::Properties properties) {
@@ -38,8 +39,11 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         // if (properties.has("texture")) {
         //     texture = properties.get<Texture2D>("texture");
         // }
+
+        arr = { Real(1.0), Real(2.0), Real(3.0), Real(4.0), Real(5.0), Real(6.0), Real(7.0), Real(8.0), Real(9.0), Real(10.0) };
     }
 
+    [mutating]
     void traverse(dyslang::Properties properties) {
         properties.set("id", id);
         properties.set("position", position);
@@ -48,7 +52,6 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         properties.set("intensity", intensity);
         properties.set("transform", transform);
         // properties.set("texture", texture);
-        Real arr[10] = { Real(1.0), Real(2.0), Real(3.0), Real(4.0), Real(5.0), Real(6.0), Real(7.0), Real(8.0), Real(9.0), Real(10.0) };
         properties.set("arr_test", arr);
     }
 

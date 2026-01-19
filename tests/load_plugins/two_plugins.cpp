@@ -20,15 +20,21 @@ int main(int argc, char* argv[]) {
 
 	// set properties 
     dyslang::Properties props_in;
-	props_in.set("id", 777);
-    props_in.set("position", std::array<Real, 3>{ 10.0f, 10.0f, 13.0f });
-    props_in.set("color", std::array<Real, 3>{ 3.0f, 4.0, 1000 });
-    props_in.set("intensity", Real(15.0f));
-    props_in.set("transform", dyslang::matrix<Real, 3, 3>{
-        1.0f, 0.0, 0.0,
-    	0.0f, 1.0, 0.0,
-    	0.0f, 0.0, 1.0
-    });
+    auto id = 777;
+    auto position = std::array<Real, 3>{ 10.0f, 17.0f, 13.0f };
+    auto color = std::array<Real, 3>{ 3.0f, 4.0, 1000 };
+    auto intensity = static_cast<Real>(15.0f);
+    auto transform = dyslang::matrix<Real, 3, 3>{
+        1.0f, 2.0f, 3.0f,
+        4.0f, 5.0f, 6.0f,
+        7.0f, 8.0f, 9.0f
+    };
+
+    props_in.set("id", id);
+    props_in.set("position", position);
+    props_in.set("color", color);
+    props_in.set("intensity", intensity);
+    props_in.set("transform", transform);
     //props_in.set("texture", dyslang::ResourceRef{ 1 });
     std::cout << "IN:" << props_in.to_string() << '\n';
 
