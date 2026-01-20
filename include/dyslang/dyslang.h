@@ -238,6 +238,7 @@ bool operator!=(NativeString left, NativeString right)
 #include <concepts>
 #include <optional>
 #include <array>
+#include <span>
 #include <slang.h>
 #include <dyslang/platform.h>
 #include <dyslang/plugin.h>
@@ -286,12 +287,20 @@ namespace dyslang {
         Optional& operator=(const T& v) { value = v; hasValue = 1; return *this; }
         Optional& operator=(const std::nullopt_t&) { value = {}; hasValue = 0; return *this; }
     };
+
+    template<typename T> using DynamicArray = std::span<T>;
 }
 #else
 namespace dyslang {
     typealias arithmetic = __BuiltinArithmeticType;
 	typealias b32 = uint32_t;
 	typealias CString = NativeString;
+
+    __generic<typename T>
+	struct DynamicArray {
+        T* data;
+        size_t count;
+    };
 }
 #endif
 
@@ -322,13 +331,6 @@ namespace dyslang
         dyslang_properties_set(double)
 #undef dyslang_properties_set
 	};
-
-    __generic<typename T>
-    struct DynamicArray {
-        T* data;
-        uint64_t size;
-    };
-
 #ifdef __SLANG_CPP__
 
 namespace __private {
@@ -453,7 +455,13 @@ struct Properties {
 #elif __cplusplus
 	
 	namespace detail {
-        template <typename T, typename = void> struct dim_traits { static constexpr std::array<size_t, 3> value = { 0, 0, 0 }; };
+        template <typename, typename = void> struct dim_traits { static constexpr std::array<size_t, 3> value = { 0, 0, 0 }; };
+        template <typename T> struct dim_traits<DynamicArray<T>> {
+            static constexpr std::array<size_t, 3> value = [] {
+                auto sub = dim_traits<T>::value;
+                return std::array<size_t, 3>{ 0, sub[0], sub[1] };
+            }();
+        };
         template <typename T, size_t N> struct dim_traits<std::array<T, N>> {
             static constexpr std::array<size_t, 3> value = [] {
                 auto sub = dim_traits<T>::value;
@@ -462,26 +470,39 @@ struct Properties {
         };
         template <typename T> constexpr std::array<size_t, 3> get_dims_v = [] {
             auto sub = dim_traits<std::remove_cv_t<std::remove_reference_t<T>>>::value;
-			//if (sub[0] == 0) sub[0] = 1;
             return sub;
         }();
 
         template <typename T, typename = void> struct stride_traits { static constexpr std::array<int64_t, 4> value = { sizeof(T), 0, 0, 0 }; };
-        template <typename T, int64_t N>
-        struct stride_traits<std::array<T, N>> {
+        template <typename T> struct stride_traits<DynamicArray<T>> {
             static constexpr std::array<int64_t, 4> value = [] {
-                std::array<int64_t, 4> sub = stride_traits<T>::value;
+                auto sub = stride_traits<T>::value;
+                return std::array<int64_t, 4>{ sizeof(T), sub[0], sub[1], sub[2] };
+            }();
+        };
+		template <typename T, size_t N> struct stride_traits<std::array<T, N>> {
+            static constexpr std::array<int64_t, 4> value = [] {
+                auto sub = stride_traits<T>::value;
                 return std::array<int64_t, 4>{ N * sizeof(T), sub[0], sub[1], sub[2] };
             }();
         };
         template <typename T> constexpr std::array<int64_t, 3> get_stride_v = [] {
-            std::array<int64_t, 4> sub = stride_traits<std::remove_cv_t<std::remove_reference_t<T>>>::value;
+            auto sub = stride_traits<std::remove_cv_t<std::remove_reference_t<T>>>::value;
 			return std::array<int64_t, 3>{ sub[1], sub[2], sub[3] };
         }();
 
-        template <typename T, typename = void> struct type_traits { using type = T; };
-        template <typename T, int64_t N> struct type_traits<std::array<T, N>> { using type = type_traits<T>::type; };
+        template <typename T> struct type_traits { using type = T; };
+        template <typename T> struct type_traits<DynamicArray<T>> { using type = type_traits<T>::type; };
+        template <typename T, size_t N> struct type_traits<std::array<T, N>> { using type = type_traits<T>::type; };
+        template <typename T, size_t R, size_t C> struct type_traits<matrix<T, R, C>> { using type = type_traits<T>::type; };
         template <typename T> using get_type_t = type_traits<std::remove_cv_t<std::remove_reference_t<T>>>::type;
+
+        template <typename> struct is_dynamic_array : std::false_type {};
+        template <typename T> struct is_dynamic_array<DynamicArray<T>> : std::true_type {};
+        template <typename T> concept IsDynamicArray = is_dynamic_array<T>::value;
+
+        template <typename T> struct get_dynamic_array_type { using type = T; };
+        template <typename T> struct get_dynamic_array_type<DynamicArray<T>> { using type = T; };
 	}
 
 	struct Properties : public IProperties
@@ -545,6 +566,14 @@ struct Properties {
             vector<int64_t, 3> stride_in_bytes = detail::get_stride_v<T>;
             set(key, (detail::get_type_t<T>*)&data, dims.data(), stride_in_bytes.data());
         }
+        template <typename T> void set(const dyslang::CString key, DynamicArray<T>& data)
+        {
+            vector<size_t, 3> dims = detail::get_dims_v<DynamicArray<T>>;
+            vector<int64_t, 3> stride_in_bytes = detail::get_stride_v<DynamicArray<T>>;
+			dims[0] = data.size();
+            stride_in_bytes[0] *= data.size();
+            set(key, (detail::get_type_t<T>*) data.data(), dims.data(), stride_in_bytes.data());
+        }
 
         template <typename T> T& get(const dyslang::CString key)
         {
@@ -558,6 +587,19 @@ struct Properties {
 				throw std::runtime_error("Property \'" + std::string(key) + "\' type mismatch.");
 			get(key, &ptr, dims.data(), stride_in_bytes.data());
             return *(T*)ptr;
+        }
+        template <detail::IsDynamicArray T> T get(const dyslang::CString key)
+        {
+            vector<size_t, 3> dims;
+            vector<int64_t, 3> stride_in_bytes;
+            detail::get_type_t<T>* ptr;
+            // check if property is correct type
+            if (!has(key))
+                throw std::runtime_error("Property \'" + std::string(key) + "\' does not exist.");
+            if (!std::holds_alternative<detail::get_type_t<T>*>(properties[key].ptr))
+                throw std::runtime_error("Property \'" + std::string(key) + "\' type mismatch.");
+            get(key, &ptr, dims.data(), stride_in_bytes.data());
+            return { (typename detail::get_dynamic_array_type<T>::type*)ptr, dims[0] };
         }
 
 	    [[nodiscard]] std::string to_string() const {
