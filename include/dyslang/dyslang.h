@@ -259,6 +259,8 @@ namespace dyslang {
 
     template <arithmetic T, size_t N> using vector = std::array<T, N>;
     template <arithmetic T, size_t R, size_t C> using matrix = std::array<vector<T, C>, R>;
+    template <arithmetic T, size_t N> using Vector = vector<T, N>;
+    template <arithmetic T, size_t R, size_t C> using Matrix = matrix<T, R, C>;
 
     // glsl/hlsl/slang bool is 32 bits
     // c++ bool is 8 bits
@@ -299,7 +301,7 @@ namespace dyslang {
     __generic<typename T>
 	struct DynamicArray {
         T* data;
-        size_t count;
+        uint64_t count;
     };
 }
 #endif
@@ -348,18 +350,44 @@ namespace __private {
                 template <typename T> struct vector_info {};
                 template <typename T, size_t N> struct vector_info<Vector<T, N>> {
                     using type = T;
+					static constexpr size_t rows = N;
+					static constexpr size_t cols = 0;
                     static constexpr size_t size = N;
                 };
+                template <typename T, size_t R, size_t C> struct vector_info<Matrix<T, R, C>> {
+                    using type = T;
+					static constexpr size_t rows = R;
+					static constexpr size_t cols = C;
+                    static constexpr size_t size = R * C;
+                };
+
+                template <typename T> inline constexpr bool is_arithmetic_v = std::is_floating_point_v<T> || std::is_integral_v<T>;
+
+				struct DynamicArrayHelper { void* ptr; uint64_t count; };
 				
 				template <typename T, typename PROPERTIES_T> 
-                T getProperty(const char* key, T dummy, PROPERTIES_T props){
-                    T* value;
-					std::array<size_t, 3> dims = { 0, 0, 0 };
-					std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
-					props->get(key, &value, dims.data(), stride_in_bytes.data());
-                    if (dims[0] != 0) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
-                    return *value;
+                T getProperty(const char* key, T dummy, PROPERTIES_T props)// require(is_arithmetic_v<std::remove_cv_t<std::remove_reference_t<T>>>)
+				{
+					if constexpr (is_arithmetic_v<std::remove_cv_t<std::remove_reference_t<T>>>) {
+						T* value;
+						std::array<size_t, 3> dims = { 0, 0, 0 };
+						std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
+						props->get(key, &value, dims.data(), stride_in_bytes.data());
+	                    if (dims[0] != 0) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
+	                    return *value;
+					} else if (sizeof(T) == 16) { // DynamicArray
+						using da_t = std::remove_pointer_t<decltype(dummy.data_0)>;
+                        using value_t = vector_info<da_t>::type;
+						value_t* value;
+						std::array<size_t, 3> dims = { 0, 0, 0 };
+						std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
+						props->get(key, &value, dims.data(), stride_in_bytes.data());
+						DynamicArrayHelper result = { value, dims[0] };
+                        return *reinterpret_cast<T*>(&result);
+                    }
+					return T();
                 }
+                 
 				template <typename T, int N, typename PROPERTIES_T> 
                 Vector<T, N> getProperty(const char* key, Vector<T, N> dummy, PROPERTIES_T props){	
 					Vector<T, N>* value;
@@ -395,9 +423,18 @@ namespace __private {
         __requirePrelude(R"(
 			template <typename T, typename PROPERTIES_T> 
             void setProperty(const char* key, T* value, PROPERTIES_T& props){
-				std::array<size_t, 3> dims = { 0, 0, 0 };
-				std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
-                props->set(key, value, dims.data(), stride_in_bytes.data());
+                if constexpr (is_arithmetic_v<std::remove_cv_t<std::remove_reference_t<T>>>) {
+                    std::array<size_t, 3> dims = { 0, 0, 0 };
+                    std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
+                    props->set(key, value, dims.data(), stride_in_bytes.data());
+                } else if (sizeof(T) == 16) { // DynamicArray
+                    using da_t = std::remove_pointer_t<decltype(value->data_0)>;
+                    using value_t = vector_info<da_t>::type;
+                    value_t* ptr = (value_t*)value->data_0;
+                    std::array<size_t, 3> dims = { value->count_0, vector_info<da_t>::rows, vector_info<da_t>::cols };
+                    std::array<int64_t, 3> stride_in_bytes = { sizeof(value_t), 0, 0 };
+                    props->set(key, ptr, dims.data(), stride_in_bytes.data());
+				}
             }
 			template <typename T, int N, typename PROPERTIES_T>
             void setProperty(const char* key, Vector<T, N>* value, PROPERTIES_T& props){
@@ -462,10 +499,15 @@ struct Properties {
                 return std::array<size_t, 3>{ 0, sub[0], sub[1] };
             }();
         };
-        template <typename T, size_t N> struct dim_traits<std::array<T, N>> {
+        template <typename T, size_t N> struct dim_traits<Vector<T, N>> {
             static constexpr std::array<size_t, 3> value = [] {
                 auto sub = dim_traits<T>::value;
                 return std::array<size_t, 3>{ N, sub[0], sub[1] };
+            }();
+        };
+        template <typename T, size_t R, size_t C> struct dim_traits<Matrix<T, R, C>> {
+            static constexpr std::array<size_t, 3> value = [] {
+                return std::array<size_t, 3>{ R, C, 0 };
             }();
         };
         template <typename T> constexpr std::array<size_t, 3> get_dims_v = [] {
@@ -480,7 +522,7 @@ struct Properties {
                 return std::array<int64_t, 4>{ sizeof(T), sub[0], sub[1], sub[2] };
             }();
         };
-		template <typename T, size_t N> struct stride_traits<std::array<T, N>> {
+		template <typename T, size_t N> struct stride_traits<Vector<T, N>> {
             static constexpr std::array<int64_t, 4> value = [] {
                 auto sub = stride_traits<T>::value;
                 return std::array<int64_t, 4>{ N * sizeof(T), sub[0], sub[1], sub[2] };
@@ -493,8 +535,8 @@ struct Properties {
 
         template <typename T> struct type_traits { using type = T; };
         template <typename T> struct type_traits<DynamicArray<T>> { using type = type_traits<T>::type; };
-        template <typename T, size_t N> struct type_traits<std::array<T, N>> { using type = type_traits<T>::type; };
-        template <typename T, size_t R, size_t C> struct type_traits<matrix<T, R, C>> { using type = type_traits<T>::type; };
+        template <typename T, size_t N> struct type_traits<Vector<T, N>> { using type = type_traits<T>::type; };
+        template <typename T, size_t R, size_t C> struct type_traits<Matrix<T, R, C>> { using type = type_traits<T>::type; };
         template <typename T> using get_type_t = type_traits<std::remove_cv_t<std::remove_reference_t<T>>>::type;
 
         template <typename> struct is_dynamic_array : std::false_type {};
@@ -610,7 +652,11 @@ struct Properties {
 	            result += ": ";
 	            std::visit([&value, &result](auto&& ptr) {
 	                using T = std::decay_t<std::remove_cv_t<std::remove_reference_t<decltype(ptr)>>>;
-	                if (value.dimension[0] == 0)
+                    if (ptr == nullptr) {
+                        result += "null\n";
+                        return;
+					}
+	                if (value.dimension[0] == 0 && value.dimension[1] == 0 && value.dimension[2] == 0)
 	                    result += std::to_string(ptr[0]);
 	                else 
 		            {

@@ -9,7 +9,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
     Real intensity;
     matrix<Real, 3, 3> transform;
     Real arr[10];
-    // dyslang::DynamicArray<Real> dyn_arr;
+    dyslang::DynamicArray<matrix<Real, 3, 3>> dynamic_transform;
 
     __init(dyslang::Properties properties) {
         if (properties.has("id")) {
@@ -36,6 +36,10 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
             transform = properties.get<matrix<Real, 3, 3>>("transform");
         } else transform = matrix<Real, 3, 3>(1.0);
 
+        if (properties.has("dynamic_transform")) {
+            dynamic_transform = properties.get<dyslang::DynamicArray<matrix<Real, 3, 3>>>("dynamic_transform");
+        } else dynamic_transform = dyslang::DynamicArray<matrix<Real, 3, 3>>();
+
         // if (properties.has("texture")) {
         //     texture = properties.get<Texture2D>("texture");
         // }
@@ -51,7 +55,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         properties.set("color", color);
         properties.set("intensity", intensity);
         properties.set("transform", transform);
-        // properties.set("texture", texture);
+        properties.set("dynamic_transform", dynamic_transform);
         properties.set("arr_test", arr);
     }
 

@@ -81,6 +81,7 @@ Slang::ComPtr<slang::IBlob> compileSlangModule(const Slang::ComPtr<slang::IGloba
     sessionDesc.searchPaths = includes.data();
     sessionDesc.compilerOptionEntries = copts.data();
     sessionDesc.compilerOptionEntryCount = static_cast<uint32_t>(copts.size());
+    sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_ROW_MAJOR;
 
     slang::PreprocessorMacroDesc macros[] = {
         { "__DYSLANG__", "1" }
@@ -111,6 +112,7 @@ std::vector<std::string> split(const std::string& s, char delim) {
 }
 
 // -D__DYSLANG_VARIANTS__="(float_rgb,(<float>))"
+// e.g., debug via slangc point.slang -D__SLANG_CPP__ -D__DYSLANG_VARIANTS__="(float_rgb,(<float>))" -matrix-layout-row-major -o out.cpp
 std::string create_variant_define(std::string variants) {
     std::erase_if(variants, isspace);
     auto variant_list = split(variants, ';');
@@ -142,6 +144,7 @@ Slang::ComPtr<slang::IBlob> compilerSharedLib(const Slang::ComPtr<slang::IGlobal
     };
     sessionDesc.preprocessorMacros = &macros[0];
     sessionDesc.preprocessorMacroCount = 3;
+    sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_ROW_MAJOR;
     sessionDesc.searchPathCount = 1;
     const std::vector<const char*> paths = { source.path.c_str() };
     sessionDesc.searchPaths = &paths[0];

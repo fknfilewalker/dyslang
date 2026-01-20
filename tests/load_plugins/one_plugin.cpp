@@ -22,6 +22,7 @@ int main(int argc, char* argv[]) {
 	auto aaa = dyslang::detail::get_dims_v<std::array<std::array<double, 3>, 4>>; // 4 3 0
 	auto aaaa = dyslang::detail::get_dims_v<std::array<std::array<std::array<double, 3>, 4>, 5>>; // 5 4 3
 	auto aaaaa = dyslang::detail::get_dims_v<std::array<dyslang::matrix<double, 4, 3>, 5>>; // 5 4 3
+    auto aaaaaa = dyslang::detail::get_dims_v<dyslang::matrix<double, 3, 3>>; // 3 3 0
 
     auto b = dyslang::detail::get_stride_v<double>; // 0 0 0
     auto bb = dyslang::detail::get_stride_v<std::array<double, 3>>; // 8 0 0
@@ -85,7 +86,7 @@ int main(int argc, char* argv[]) {
     slangc.add_type_conformance(light->interface_name, light->implementation_name, conformance_id);
     dyslang::Slangc::Hash hash;
     slangc = slangc.compose().hash(0, hash);
-    auto output = slangc.glsl();
+    auto output = slangc.spv();
 
     for (const auto& o : output) {
         std::cout << o;
