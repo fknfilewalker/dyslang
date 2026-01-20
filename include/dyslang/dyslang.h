@@ -653,7 +653,7 @@ struct Properties {
 	            std::visit([&value, &result](auto&& ptr) {
 	                using T = std::decay_t<std::remove_cv_t<std::remove_reference_t<decltype(ptr)>>>;
                     if (ptr == nullptr) {
-                        result += "null\n";
+                        result += "null";
                         return;
 					}
 	                if (value.dimension[0] == 0 && value.dimension[1] == 0 && value.dimension[2] == 0)
