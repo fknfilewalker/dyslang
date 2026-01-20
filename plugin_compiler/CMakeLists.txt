@@ -41,10 +41,10 @@ function(dyslang_add_plugin FILEPATH VARIANTS)
    add_custom_command(OUTPUT ${DYNAMIC_LIB_OUTPUT} #${SLANG_MODULE_OUTPUT}
       COMMAND dyslang_plugin_compiler ARGS ${INPUT_SLANG_FILE} "${_VARIANTS}"
       MAIN_DEPENDENCY ${INPUT_SLANG_FILE}
-      DEPENDS dyslang_plugin_compiler
+      DEPENDS ${INPUT_SLANG_FILE} dyslang_plugin_compiler
       COMMENT "Generating ${FILENAME} plugin"
       VERBATIM)
-   add_custom_target(${FILENAME} ALL DEPENDS ${DYNAMIC_LIB_OUTPUT}) #${SLANG_MODULE_OUTPUT})
+   add_custom_target(${FILENAME} ALL DEPENDS ${DYNAMIC_LIB_OUTPUT} SOURCES ${INPUT_SLANG_FILE}) #${SLANG_MODULE_OUTPUT})
    # set_target_properties(${FILENAME} PROPERTIES FOLDER "${DYSLANG_PLUGIN_FOLDER}/${DIR}")
 
    # append to the list of plugins
@@ -52,7 +52,7 @@ function(dyslang_add_plugin FILEPATH VARIANTS)
    # set_property(GLOBAL APPEND PROPERTY DYSLANG_PLUGIN_LIST ${SLANG_MODULE_OUTPUT})
 endfunction()
 
-function(dyslang_copy_plugins TARGET RELATIVE_PATH)
+function(dyslang_copy_plugins TARGET PLUGINS RELATIVE_PATH)
    add_custom_command(TARGET ${TARGET} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TARGET}>/${RELATIVE_PATH}
       COMMAND_EXPAND_LISTS
@@ -64,9 +64,16 @@ function(dyslang_copy_plugins TARGET RELATIVE_PATH)
    # copy the plugins to the target directory
    foreach(PLUGIN ${PLUGIN_LIST})
       get_filename_component(FILENAME ${PLUGIN} NAME)
+      get_filename_component(FILENAME_WE ${PLUGIN} NAME_WE)
+      # if filename is in the PLUGINS list (copy it)
+      list(FIND PLUGINS ${FILENAME_WE} INDEX)
+      if(INDEX EQUAL -1)
+         continue()
+      endif()
       add_custom_command(TARGET ${TARGET} POST_BUILD
-         COMMAND ${CMAKE_COMMAND} -E copy ${PLUGIN} $<TARGET_FILE_DIR:${TARGET}>/${RELATIVE_PATH}/${FILENAME}
+         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PLUGIN} $<TARGET_FILE_DIR:${TARGET}>/${RELATIVE_PATH}/${FILENAME}
          COMMAND_EXPAND_LISTS
+         VERBATIM
       )
       # message(STATUS "Copying plugin: ${PLUGIN}")
    endforeach()

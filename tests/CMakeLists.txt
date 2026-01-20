@@ -54,5 +54,5 @@ add_target(annotation_rtti2 DEPS ${DYSLANG_LIBRARY}
 add_target(dyslang2 DEPS ${DYSLANG_LIBRARY}
     SOURCES "dyslang2/main.cpp" "dyslang2/script.slang"
 )
-dyslang_copy_plugins(load_plugins_one plugins)
-dyslang_copy_plugins(load_plugins_two plugins)
+dyslang_copy_plugins(load_plugins_one "point" plugins)
+dyslang_copy_plugins(load_plugins_two "point;spot" plugins)
