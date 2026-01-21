@@ -72,7 +72,8 @@ Slang::ComPtr<slang::IBlob> compileSlangModule(const Slang::ComPtr<slang::IGloba
 {
     const std::vector includes = { source.path.c_str() };
     std::vector<slang::CompilerOptionEntry> copts{
-        {.name = slang::CompilerOptionName::LanguageVersion, .value = {slang::CompilerOptionValueKind::Int, 2026}}
+        {.name = slang::CompilerOptionName::LanguageVersion, .value = {slang::CompilerOptionValueKind::Int, 2026} },
+        {.name = slang::CompilerOptionName::EnableExperimentalDynamicDispatch, .value = {slang::CompilerOptionValueKind::Int, 1} }
     };
 
     Slang::ComPtr<slang::ISession> session;

@@ -446,7 +446,7 @@ namespace __private {
         __intrinsic_asm R"(getProperty($0, CompileTimeInit<$TR>::get(), $1))";
     }
 
-    void set<T>(dyslang::CString key, __ref T value, dyslang::IProperties properties) {
+    void set<T>(dyslang::CString key, T value, dyslang::IProperties properties) {
         __requirePrelude(R"(
 			template <typename T, typename PROPERTIES_T> 
             void setProperty(const char* key, T* value, PROPERTIES_T& props){
@@ -515,7 +515,7 @@ struct Properties {
 #endif
     }
 
-    void set<T>(dyslang::CString key, __ref T value) {
+    void set<T>(dyslang::CString key, T value) {
 #ifdef __SLANG_CPP__
         __private::set<T>(key, value, __properties);
 #endif
