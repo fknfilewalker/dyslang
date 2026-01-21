@@ -335,6 +335,22 @@ namespace dyslang
         dyslang_properties_set(double)
 #undef dyslang_properties_set
 	};
+
+    // todo: use DescriptorHandle directly
+    #ifdef __SLANG__
+    internal struct TempDescriptorHandle<T:IOpaqueDescriptor> {
+        internal vector<uint32_t, 2> id;
+        internal DescriptorHandle<T> get() {
+            return {id};
+        }
+    };
+    #else
+    struct DescriptorHandle : vector<uint32_t, 2>
+    {
+        using type = vector<uint32_t, 2>;
+    };
+    #endif
+
 #ifdef __SLANG_CPP__
 
 namespace __private {
@@ -526,12 +542,6 @@ struct Properties {
 	
 	namespace detail {
         template <typename, typename = void> struct dim_traits { static constexpr std::array<size_t, 3> value = { 0, 0, 0 }; };
-        template <typename T> struct dim_traits<DynamicArray<T>> {
-            static constexpr std::array<size_t, 3> value = [] {
-                auto sub = dim_traits<T>::value;
-                return std::array<size_t, 3>{ 0, sub[0], sub[1] };
-            }();
-        };
         template <typename T, size_t N> struct dim_traits<Vector<T, N>> {
             static constexpr std::array<size_t, 3> value = [] {
                 auto sub = dim_traits<T>::value;
@@ -543,33 +553,42 @@ struct Properties {
                 return std::array<size_t, 3>{ R, C, 0 };
             }();
         };
+        template <typename T> struct dim_traits<DynamicArray<T>> {
+            static constexpr std::array<size_t, 3> value = [] {
+                auto sub = dim_traits<T>::value;
+                return std::array<size_t, 3>{ 0, sub[0], sub[1] };
+            }();
+        };
+        template <> struct dim_traits<DescriptorHandle> { static constexpr std::array<size_t, 3> value = dim_traits<DescriptorHandle::type>::value; };
         template <typename T> constexpr std::array<size_t, 3> get_dims_v = [] {
             auto sub = dim_traits<std::remove_cv_t<std::remove_reference_t<T>>>::value;
             return sub;
         }();
 
         template <typename T, typename = void> struct stride_traits { static constexpr std::array<int64_t, 4> value = { sizeof(T), 0, 0, 0 }; };
-        template <typename T> struct stride_traits<DynamicArray<T>> {
-            static constexpr std::array<int64_t, 4> value = [] {
-                auto sub = stride_traits<T>::value;
-                return std::array<int64_t, 4>{ sizeof(T), sub[0], sub[1], sub[2] };
-            }();
-        };
 		template <typename T, size_t N> struct stride_traits<Vector<T, N>> {
             static constexpr std::array<int64_t, 4> value = [] {
                 auto sub = stride_traits<T>::value;
                 return std::array<int64_t, 4>{ N * sizeof(T), sub[0], sub[1], sub[2] };
             }();
         };
+        template <typename T> struct stride_traits<DynamicArray<T>> {
+            static constexpr std::array<int64_t, 4> value = [] {
+                auto sub = stride_traits<T>::value;
+                return std::array<int64_t, 4>{ sizeof(T), sub[0], sub[1], sub[2] };
+            }();
+        };
+        template <> struct stride_traits<DescriptorHandle> { static constexpr std::array<int64_t, 4> value = stride_traits<DescriptorHandle::type>::value; };
         template <typename T> constexpr std::array<int64_t, 3> get_stride_v = [] {
             auto sub = stride_traits<std::remove_cv_t<std::remove_reference_t<T>>>::value;
 			return std::array<int64_t, 3>{ sub[1], sub[2], sub[3] };
         }();
 
         template <typename T> struct type_traits { using type = std::conditional_t<dyslang::is_arithmetic_v<T>, T, void>; };
-        template <typename T> struct type_traits<DynamicArray<T>> { using type = type_traits<T>::type; };
         template <typename T, size_t N> struct type_traits<Vector<T, N>> { using type = type_traits<T>::type; };
         template <typename T, size_t R, size_t C> struct type_traits<Matrix<T, R, C>> { using type = type_traits<T>::type; };
+        template <> struct type_traits<DescriptorHandle> { using type = type_traits<DescriptorHandle::type>::type; };
+        template <typename T> struct type_traits<DynamicArray<T>> { using type = type_traits<T>::type; };
         template <typename T> using get_type_t = type_traits<std::remove_cv_t<std::remove_reference_t<T>>>::type;
 
         template <typename> struct is_dynamic_array : std::false_type {};
@@ -578,6 +597,9 @@ struct Properties {
 
         template <typename T> struct get_dynamic_array_type { using type = T; };
         template <typename T> struct get_dynamic_array_type<DynamicArray<T>> { using type = T; };
+
+        template <typename T, typename = void> struct parameter_type_traits { static constexpr uint64_t value = 0; };
+        template <> struct parameter_type_traits<DescriptorHandle> { static constexpr uint64_t value = 2; };
 	}
 
 	struct Properties : public IProperties
@@ -591,7 +613,7 @@ struct Properties {
 			VariantType ptr;
             vector<size_t, 3> dimension = { 0, 0, 0 };
 			vector<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
-            uint64_t type = 0; // 1 for dynamic array
+			uint64_t type = 0; // 1 for dynamic array, 2 descriptor handle, 0 for others
 
             [[nodiscard]] size_t count() const {
                 size_t size = 1;
@@ -643,7 +665,7 @@ struct Properties {
         {
             vector<size_t, 3> dims = detail::get_dims_v<T>;
             vector<int64_t, 3> stride_in_bytes = detail::get_stride_v<T>;
-            set(key, (detail::get_type_t<T>*)&data, dims.data(), stride_in_bytes.data(), 0);
+            set(key, (detail::get_type_t<T>*)&data, dims.data(), stride_in_bytes.data(), detail::parameter_type_traits<T>::value);
         }
         template <typename T> void set(const dyslang::CString key, T* data)
         {
@@ -707,6 +729,7 @@ struct Properties {
                             result += std::to_string(ptr[0]);
                         else
                         {
+							if (value.type == 2) result += "DescriptorHandle ";
                             std::array<int64_t, 3> stride = {
                                 value.stride_in_bytes[0] / static_cast<int64_t>(sizeof(T)),
                                 value.stride_in_bytes[1] / static_cast<int64_t>(sizeof(T)),

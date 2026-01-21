@@ -51,6 +51,7 @@ int main(int argc, char* argv[]) {
         7.0f, 8.0f, 9.0f
 	};
     auto dynamic_transform = dyslang::DynamicArray{ &transform, 1 };
+    auto texture = dyslang::DescriptorHandle{ 1, 2 };
 
     dyslang::Properties props_in;
     props_in.set("id", id);
@@ -60,6 +61,8 @@ int main(int argc, char* argv[]) {
 	props_in.set("transform", transform);
 	props_in.set("dynamic_transform", dynamic_transform);
     props_in.set("ptr", &props_in);
+	props_in.set("texture", texture);
+	auto& t = props_in.get<dyslang::DescriptorHandle>("texture");
     auto& g = props_in.get<std::array<Real, 3>>("color");
     g[0] = 11199;
     auto dynamic_transform_back = props_in.get<dyslang::DynamicArray<dyslang::matrix<Real, 3, 3>>>("dynamic_transform");

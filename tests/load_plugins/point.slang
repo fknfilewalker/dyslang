@@ -11,6 +11,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
     Real arr[10];
     IEmitter<Real>* ptr;
     dyslang::DynamicArray<matrix<Real, 3, 3>> dynamic_transform;
+    dyslang::TempDescriptorHandle<Texture2D<float3>> texture;
 
     __init(dyslang::Properties properties) {
         if (properties.has("id")) {
@@ -45,9 +46,9 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
             ptr = properties.get<IEmitter<Real>*>("ptr");
         } else ptr = nullptr;
 
-        // if (properties.has("texture")) {
-        //     texture = properties.get<Texture2D>("texture");
-        // }
+        if (properties.has("texture")) {
+            texture.id = properties.get<vector<uint32_t, 2>>("texture");
+        }
 
         arr = { Real(1.0), Real(2.0), Real(3.0), Real(4.0), Real(5.0), Real(6.0), Real(7.0), Real(8.0), Real(9.0), Real(10.0) };
     }
@@ -63,14 +64,15 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         properties.set("dynamic_transform", &dynamic_transform);
         properties.set("arr_test", &arr);
         properties.set("ptr", &ptr);
+        properties.set("texture", &texture.id);
     }
 
-    [Differentiable, NoDiffThis] vector<Real, 3> illuminate(vector<Real, 3> hit_pos_ws, vector<Real, 3> normal_ws) {
+    vector<Real, 3> illuminate(vector<Real, 3> hit_pos_ws, vector<Real, 3> normal_ws) {
         vector<Real, 3> dir = position - hit_pos_ws;
         const Real dist = length(dir);
         const Real att = Real(1.0) / (Real(1.0) + dist * dist);
-        //const vector<Real, 3> emission = vector<Real, 4>(no_diff texture.get().Load(int3(0, 0, 0))).xyz;
-        return color * intensity * att * /*emission **/ max(dot(normal_ws, normalize(dir)), Real(0.0));
+        const vector<Real, 3> emission = vector<Real, 3>(texture.get().Load(int3(0, 0, 0)));
+        return color * intensity * att * emission * max(dot(normal_ws, normalize(dir)), Real(0.0));
     }
 
     [Differentiable, NoDiffThis] vector<Real, 3> sample() { return position; }
