@@ -316,7 +316,8 @@ namespace dyslang
         vbegin(dyslang::b32) has(const dyslang::CString) vend;
 
 #define dyslang_properties_get(TYPE) vbegin(uint64_t) get(const dyslang::CString, TYPE**, size_t* dims /*3*/, int64_t* stride_in_bytes /*3*/) vend;
-        dyslang_properties_get(int32_t)
+	    dyslang_properties_get(void)
+		dyslang_properties_get(int32_t)
         dyslang_properties_get(uint32_t)
         dyslang_properties_get(int64_t)
         dyslang_properties_get(uint64_t)
@@ -325,6 +326,7 @@ namespace dyslang
 #undef dyslang_properties_get
 
 #define dyslang_properties_set(TYPE) vbegin(void) set(const dyslang::CString key, TYPE* ptr, size_t* dims /*3*/, int64_t* stride_in_bytes /*3*/, uint64_t type) vend;
+		dyslang_properties_set(void)
         dyslang_properties_set(int32_t)
         dyslang_properties_set(uint32_t)
         dyslang_properties_set(int64_t)
@@ -347,7 +349,12 @@ namespace __private {
                 template <typename T> struct is_vector : std::false_type {};
                 template <typename T, size_t N> struct is_vector<Vector<T, N>> : std::true_type {};
                 
-                template <typename T> struct vector_info {};
+                template <typename T> struct vector_info {
+                    using type = void;
+					static constexpr size_t rows = 0;
+					static constexpr size_t cols = 0;
+                    static constexpr size_t size = 0;
+                };
                 template <typename T, size_t N> struct vector_info<Vector<T, N>> {
                     using type = T;
 					static constexpr size_t rows = N;
@@ -375,7 +382,15 @@ namespace __private {
 						props->get(key, &value, dims.data(), stride_in_bytes.data());
 	                    if (dims[0] != 0) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
 	                    return *value;
-					} else if (sizeof(T) == 16) { // DynamicArray
+					} 
+					else if constexpr (std::is_pointer_v<T>) {
+						void* value;
+						std::array<size_t, 3> dims = { 0, 0, 0 };
+						std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
+						props->get(key, &value, dims.data(), stride_in_bytes.data());
+	                    return (T)value;
+					} 
+					else if constexpr (sizeof(T) == 16) { // DynamicArray
 						using da_t = std::remove_pointer_t<decltype(dummy.data_0)>;
                         using value_t = vector_info<da_t>::type;
 						value_t* value;
@@ -415,8 +430,20 @@ namespace __private {
                     if (dims[0] != ROWS || dims[1] != COLS) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
                     return *value;
                 }
+
+				template <typename T>
+				struct CompileTimeInit {
+				    static constexpr T value = T{};
+					static constexpr T get() { return value; }
+				};
+				template <typename T>
+				struct CompileTimeInit<T*> {
+				    static constexpr T storage = T{};
+					static constexpr const T* value = &storage;
+					static constexpr T* get() { return const_cast<T*>(value); }
+				};
             )");
-        __intrinsic_asm R"(getProperty($0, $TR(), $1))";
+        __intrinsic_asm R"(getProperty($0, CompileTimeInit<$TR>::get(), $1))";
     }
 
     void set<T>(dyslang::CString key, __ref T value, dyslang::IProperties properties) {
@@ -427,7 +454,13 @@ namespace __private {
                     std::array<size_t, 3> dims = { 0, 0, 0 };
                     std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
                     props->set(key, value, dims.data(), stride_in_bytes.data(), 0);
-                } else if (sizeof(T) == 16) { // DynamicArray
+                } 
+				else if constexpr (std::is_pointer_v<T>) {
+					std::array<size_t, 3> dims = { 0, 0, 0 };
+                    std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
+                    props->set(key, (void*)*value, dims.data(), stride_in_bytes.data(), 0);
+				} 
+				else if constexpr (sizeof(T) == 16) { // DynamicArray
                     using da_t = std::remove_pointer_t<decltype(value->data_0)>;
                     using value_t = vector_info<da_t>::type;
                     value_t* ptr = (value_t*)value->data_0;
@@ -533,7 +566,7 @@ struct Properties {
 			return std::array<int64_t, 3>{ sub[1], sub[2], sub[3] };
         }();
 
-        template <typename T> struct type_traits { using type = T; };
+        template <typename T> struct type_traits { using type = std::conditional_t<dyslang::is_arithmetic_v<T>, T, void>; };
         template <typename T> struct type_traits<DynamicArray<T>> { using type = type_traits<T>::type; };
         template <typename T, size_t N> struct type_traits<Vector<T, N>> { using type = type_traits<T>::type; };
         template <typename T, size_t R, size_t C> struct type_traits<Matrix<T, R, C>> { using type = type_traits<T>::type; };
@@ -550,7 +583,7 @@ struct Properties {
 	struct Properties : public IProperties
 	{
 	    using SupportedTypes = std::tuple<
-            int32_t*, uint32_t*, int64_t*, uint64_t*, float*, double*
+            void*, int32_t*, uint32_t*, int64_t*, uint64_t*, float*, double*
 	    >;
 	    using VariantType = tuple_to_variant<SupportedTypes>::type;
 		struct Entry
@@ -587,6 +620,7 @@ struct Properties {
             *(vector<int64_t, 3>*)stride_in_bytes = entry.stride_in_bytes; \
             return entry.type; \
 	    }
+        dyslang_properties_get(void)
 	    dyslang_properties_get(int32_t)
 	    dyslang_properties_get(uint32_t)
 	    dyslang_properties_get(int64_t)
@@ -596,7 +630,8 @@ struct Properties {
 	#undef dyslang_properties_get
 
 	#define dyslang_properties_set(TYPE) vbegin(void) set(const dyslang::CString key, TYPE* ptr, size_t* dims, int64_t* stride_in_bytes, uint64_t type) SLANG_OVERRIDE { properties[key] = Entry{ ptr, *(vector<size_t, 3>*)dims, *(vector<int64_t, 3>*)stride_in_bytes, type }; }
-	    dyslang_properties_set(int32_t)
+		dyslang_properties_set(void)
+		dyslang_properties_set(int32_t)
 	    dyslang_properties_set(uint32_t)
 	    dyslang_properties_set(int64_t)
 	    dyslang_properties_set(uint64_t)
@@ -609,6 +644,12 @@ struct Properties {
             vector<size_t, 3> dims = detail::get_dims_v<T>;
             vector<int64_t, 3> stride_in_bytes = detail::get_stride_v<T>;
             set(key, (detail::get_type_t<T>*)&data, dims.data(), stride_in_bytes.data(), 0);
+        }
+        template <typename T> void set(const dyslang::CString key, T* data)
+        {
+            vector<size_t, 3> dims = detail::get_dims_v<T>;
+            vector<int64_t, 3> stride_in_bytes = detail::get_stride_v<T>;
+            set(key, (detail::get_type_t<T>*) & data, dims.data(), stride_in_bytes.data(), 0);
         }
         template <typename T> void set(const dyslang::CString key, DynamicArray<T>& data)
         {
@@ -652,40 +693,45 @@ struct Properties {
 	            result += " ";
 	            result += key;
 	            result += ": ";
-	            std::visit([&value, &result](auto&& ptr) {
+	            std::visit([&value, &result](auto* ptr) {
 	                using T = std::decay_t<std::remove_cv_t<std::remove_reference_t<decltype(ptr)>>>;
                     if (ptr == nullptr) {
                         result += "null";
                         return;
 					}
-	                if (value.dimension[0] == 0 && value.dimension[1] == 0 && value.dimension[2] == 0)
-	                    result += std::to_string(ptr[0]);
-	                else 
-		            {
-                        std::array<int64_t, 3> stride = {
-                            value.stride_in_bytes[0] / static_cast<int64_t>(sizeof(T)),
-                            value.stride_in_bytes[1] / static_cast<int64_t>(sizeof(T)),
-                            value.stride_in_bytes[2] / static_cast<int64_t>(sizeof(T))
-						};
-                        size_t index = 0;
+                    if constexpr (std::is_same_v<decltype(ptr), void*>) {
+                        result += "void*";
+                    }
+                    else {
+                        if (value.dimension[0] == 0 && value.dimension[1] == 0 && value.dimension[2] == 0)
+                            result += std::to_string(ptr[0]);
+                        else
+                        {
+                            std::array<int64_t, 3> stride = {
+                                value.stride_in_bytes[0] / static_cast<int64_t>(sizeof(T)),
+                                value.stride_in_bytes[1] / static_cast<int64_t>(sizeof(T)),
+                                value.stride_in_bytes[2] / static_cast<int64_t>(sizeof(T))
+                            };
+                            size_t index = 0;
 
-                        if (value.dimension[2]) result += "[";
-                        for (size_t i = 0; i < std::max(size_t(1), value.dimension[2]); ++i) {
-                            if (value.dimension[1]) result += "[";
-                            for (size_t j = 0; j < std::max(size_t(1), value.dimension[1]); ++j) {
-                                if (value.dimension[0]) result += "[";
-                                std::string sep;
-                                for (size_t k = 0; k < std::max(size_t(1), value.dimension[0]); ++k) {
-                                    result += sep + std::to_string(ptr[index]);
-                                    index++;
-                                    sep = " ";
+                            if (value.dimension[2]) result += "[";
+                            for (size_t i = 0; i < std::max(size_t(1), value.dimension[2]); ++i) {
+                                if (value.dimension[1]) result += "[";
+                                for (size_t j = 0; j < std::max(size_t(1), value.dimension[1]); ++j) {
+                                    if (value.dimension[0]) result += "[";
+                                    std::string sep;
+                                    for (size_t k = 0; k < std::max(size_t(1), value.dimension[0]); ++k) {
+                                        result += sep + std::to_string(ptr[index]);
+                                        index++;
+                                        sep = " ";
+                                    }
+                                    if (value.dimension[0]) result += "]";
                                 }
-                                if (value.dimension[0]) result += "]";
+                                if (value.dimension[1]) result += "]";
                             }
-                            if (value.dimension[1]) result += "]";
+                            if (value.dimension[2]) result += "]";
                         }
-                        if (value.dimension[2]) result += "]";
-	                }
+                    }
 	            }, value.ptr);
 	            result += "\n";
 	        }

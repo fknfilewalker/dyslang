@@ -38,6 +38,7 @@ int main(int argc, char* argv[]) {
 	auto d = dyslang::detail::get_stride_v<dyslang::DynamicArray<double>>;
     auto dd = dyslang::detail::get_stride_v<dyslang::DynamicArray<std::array<double, 3>>>;
 	using DyT = dyslang::detail::get_type_t<dyslang::DynamicArray<std::array<double, 3>>>;
+    using RanT = dyslang::detail::get_type_t<dyslang::Plugin>;
 
     // set properties
 	auto id = 777;
@@ -58,6 +59,7 @@ int main(int argc, char* argv[]) {
 	props_in.set("intensity", intensity);
 	props_in.set("transform", transform);
 	props_in.set("dynamic_transform", dynamic_transform);
+    props_in.set("ptr", &props_in);
     auto& g = props_in.get<std::array<Real, 3>>("color");
     g[0] = 11199;
     auto dynamic_transform_back = props_in.get<dyslang::DynamicArray<dyslang::matrix<Real, 3, 3>>>("dynamic_transform");

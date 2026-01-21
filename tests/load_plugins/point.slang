@@ -9,6 +9,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
     Real intensity;
     matrix<Real, 3, 3> transform;
     Real arr[10];
+    Tuple<float> *ptr;
     dyslang::DynamicArray<matrix<Real, 3, 3>> dynamic_transform;
 
     __init(dyslang::Properties properties) {
@@ -40,6 +41,10 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
             dynamic_transform = properties.get<dyslang::DynamicArray<matrix<Real, 3, 3>>>("dynamic_transform");
         } else dynamic_transform = dyslang::DynamicArray<matrix<Real, 3, 3>>();
 
+        if (properties.has("ptr")) {
+            ptr = properties.get<Tuple<float>*>("ptr");
+        } else ptr = nullptr;
+
         // if (properties.has("texture")) {
         //     texture = properties.get<Texture2D>("texture");
         // }
@@ -57,6 +62,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         properties.set("transform", transform);
         properties.set("dynamic_transform", dynamic_transform);
         properties.set("arr_test", arr);
+        properties.set("ptr", ptr);
     }
 
     [Differentiable, NoDiffThis] vector<Real, 3> illuminate(vector<Real, 3> hit_pos_ws, vector<Real, 3> normal_ws) {
