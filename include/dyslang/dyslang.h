@@ -338,7 +338,7 @@ namespace dyslang
 
     // todo: use DescriptorHandle directly
     #ifdef __SLANG__
-    internal struct TempDescriptorHandle<T:IOpaqueDescriptor> {
+    internal struct _DescriptorHandle<T:IOpaqueDescriptor> {
         internal vector<uint32_t, 2> id;
         internal DescriptorHandle<T> get() {
             return {id};
@@ -406,6 +406,13 @@ namespace __private {
 						props->get(key, &value, dims.data(), stride_in_bytes.data());
 	                    return (T)value;
 					} 
+                    else if constexpr (sizeof(T) == 8) { // DescriptorHandle
+						uint32_t* value;
+						std::array<size_t, 3> dims = { 0, 0, 0 };
+						std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
+						props->get(key, &value, dims.data(), stride_in_bytes.data());
+	                    return *(T*)value;
+					} 
 					else if constexpr (sizeof(T) == 16) { // DynamicArray
 						using da_t = std::remove_pointer_t<decltype(dummy.data_0)>;
                         using value_t = vector_info<da_t>::type;
@@ -471,11 +478,17 @@ namespace __private {
                     std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
                     props->set(key, value, dims.data(), stride_in_bytes.data(), 0);
                 } 
-				else if constexpr (std::is_pointer_v<T>) {
+				else if constexpr (std::is_pointer_v<T>) { // Pointer
 					std::array<size_t, 3> dims = { 0, 0, 0 };
                     std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
-                    props->set(key, (void*)*value, dims.data(), stride_in_bytes.data(), 0);
-				} 
+                    props->set(key, (void*)*value, dims.data(), stride_in_bytes.data(), 3);
+				}
+                else if constexpr (sizeof(T) == 8) { // DescriptorHandle
+                    std::array<size_t, 3> dims = { 2, 0, 0 };
+                    std::array<int64_t, 3> stride_in_bytes = { sizeof(uint32_t), 0, 0 };
+                    uint32_t* ptr = (uint32_t*)value;
+                    props->set(key, ptr, dims.data(), stride_in_bytes.data(), 2);
+				}
 				else if constexpr (sizeof(T) == 16) { // DynamicArray
                     using da_t = std::remove_pointer_t<decltype(value->data_0)>;
                     using value_t = vector_info<da_t>::type;
@@ -599,7 +612,9 @@ struct Properties {
         template <typename T> struct get_dynamic_array_type<DynamicArray<T>> { using type = T; };
 
         template <typename T, typename = void> struct parameter_type_traits { static constexpr uint64_t value = 0; };
+        template <typename T> struct parameter_type_traits<DynamicArray<T>> { static constexpr uint64_t value = 1; };
         template <> struct parameter_type_traits<DescriptorHandle> { static constexpr uint64_t value = 2; };
+        template <typename T> struct parameter_type_traits<T*> { static constexpr uint64_t value = 3; };
 	}
 
 	struct Properties : public IProperties
@@ -613,7 +628,7 @@ struct Properties {
 			VariantType ptr;
             vector<size_t, 3> dimension = { 0, 0, 0 };
 			vector<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
-			uint64_t type = 0; // 1 for dynamic array, 2 descriptor handle, 0 for others
+			uint64_t type = 0; // 1 for dynamic array, 2 descriptor handle, 3 external pointer, 0 for others
 
             [[nodiscard]] size_t count() const {
                 size_t size = 1;
@@ -671,7 +686,7 @@ struct Properties {
         {
             vector<size_t, 3> dims = detail::get_dims_v<T>;
             vector<int64_t, 3> stride_in_bytes = detail::get_stride_v<T>;
-            set(key, (detail::get_type_t<T>*) & data, dims.data(), stride_in_bytes.data(), 0);
+            set(key, (detail::get_type_t<T>*) & data, dims.data(), stride_in_bytes.data(), 3);
         }
         template <typename T> void set(const dyslang::CString key, DynamicArray<T>& data)
         {
@@ -717,6 +732,7 @@ struct Properties {
 	            result += ": ";
 	            std::visit([&value, &result](auto* ptr) {
 	                using T = std::decay_t<std::remove_cv_t<std::remove_reference_t<decltype(ptr)>>>;
+                    result += "Type=" + std::to_string(value.type) + " ";
                     if (ptr == nullptr) {
                         result += "null";
                         return;
