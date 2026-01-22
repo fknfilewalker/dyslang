@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
     light->traverse(props_out);
     std::cout << "OUT:" << props_out.to_string() << '\n';
 
-    std::cout << "\nHandle Device Resources:";
+    std::cout << "Handle Device Resources:\n";
 	for (auto& [key, entry] : props_out.properties) {
         if (entry.type) {
             std::cout << "\t Create external device resource for entry:" << key << " with size: " << entry.total_size_in_bytes << " bytes.\n";
