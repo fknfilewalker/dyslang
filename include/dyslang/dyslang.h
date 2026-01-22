@@ -496,7 +496,7 @@ namespace __private {
                     value_t* ptr = (value_t*)value->data_0;
                     std::array<size_t, 3> dims = { value->count_0, vector_info<da_t>::rows, vector_info<da_t>::cols };
                     std::array<int64_t, 3> stride_in_bytes = { sizeof(value_t), 0, 0 };
-                    props->set(key, ptr, dims.data(), stride_in_bytes.data(), sizeof(T), 1);
+                    props->set(key, ptr, dims.data(), stride_in_bytes.data(), sizeof(da_t), 1);
 				}
             }
 			template <typename T, int N, typename PROPERTIES_T>
