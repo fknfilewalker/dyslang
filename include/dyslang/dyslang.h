@@ -682,13 +682,13 @@ struct Properties {
         {
             vector<size_t, 3> dims = detail::get_dims_v<T>;
             vector<int64_t, 3> stride_in_bytes = detail::get_stride_v<T>;
-            set(key, (detail::get_type_t<T>*)&data, dims.data(), stride_in_bytes.data(), 0, detail::parameter_type_traits<T>::value);
+            set(key, (detail::get_type_t<T>*)&data, dims.data(), stride_in_bytes.data(), sizeof(T), detail::parameter_type_traits<T>::value);
         }
         template <typename T> void set(const dyslang::CString key, T* data)
         {
             vector<size_t, 3> dims = detail::get_dims_v<T>;
             vector<int64_t, 3> stride_in_bytes = detail::get_stride_v<T>;
-            set(key, (detail::get_type_t<T>*) & data, dims.data(), stride_in_bytes.data(), 0, 3);
+            set(key, (detail::get_type_t<T>*) & data, dims.data(), stride_in_bytes.data(), sizeof(T), 3);
         }
         template <typename T> void set(const dyslang::CString key, DynamicArray<T>& data)
         {
@@ -696,7 +696,7 @@ struct Properties {
             vector<int64_t, 3> stride_in_bytes = detail::get_stride_v<DynamicArray<T>>;
 			dims[0] = data.size();
             stride_in_bytes[0] *= data.size();
-            set(key, (detail::get_type_t<T>*) data.data(), dims.data(), stride_in_bytes.data(), 0, 1);
+            set(key, (detail::get_type_t<T>*) data.data(), dims.data(), stride_in_bytes.data(), data.size() * sizeof(T), 1);
         }
 
         template <typename T> T& get(const dyslang::CString key)
