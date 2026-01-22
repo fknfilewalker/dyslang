@@ -114,7 +114,7 @@
 #define IDENTITY(NAME, ...) UNWRAP_VARIANT __VA_ARGS__
 #define STRINGIFY(NAME, ...) #NAME UNWRAP_VARIANT_STRING __VA_ARGS__
 #define SIZE_OF(NAME, ...) sizeof(NAME UNWRAP_VARIANT __VA_ARGS__)
-#define CREATE_OBJECT_INPLACE(NAME, ...) __create_object_inplace_helper<NAME UNWRAP_VARIANT __VA_ARGS__>(ptr, NAME UNWRAP_VARIANT __VA_ARGS__(dyslang::Properties(props)))
+#define CREATE_OBJECT_INPLACE(NAME, ...) __copy_data_to_ptr<NAME UNWRAP_VARIANT __VA_ARGS__>(ptr, NAME UNWRAP_VARIANT __VA_ARGS__(dyslang::Properties(props)))
 #define TRAVERSE_OBJECT(NAME, ...) Ptr<NAME UNWRAP_VARIANT __VA_ARGS__>(ptr).traverse(dyslang::Properties(props))
 
 // set by plugincompiler
@@ -151,14 +151,6 @@ SLANG_COM_INTERFACE(0x##_0 ##_1 ##_2 ##_3 ##_4 ##_5 ##_6 ##_7, 0x##_8 ##_9 ##_10
 struct _NAME : public ISlangUnknown { \
 _UUID
 
-#define slangGInterface(_VISIBILITY, _GENERIC, _NAME) \
-_GENERIC \
-struct _NAME : public ISlangUnknown {
-#define slangGInterfaceUUID(_VISIBILITY, _GENERIC, _NAME, _UUID) \
-_GENERIC \
-struct _NAME : public ISlangUnknown { \
-_UUID
-
 #define __generic template
 #define concept(TYPE, VAR) TYPE VAR
 #define annotations(...)
@@ -178,27 +170,25 @@ _UUID
 #define slangInterfaceUUID(_VISIBILITY, _NAME, _UUID) \
 _UUID \
 _VISIBILITY interface _NAME {
-#define slangGInterface(_VISIBILITY, _GENERIC, _NAME) \
-_GENERIC \
-_VISIBILITY interface _NAME {
-#define slangGInterfaceUUID(_VISIBILITY, _GENERIC, _NAME, _UUID) \
-_UUID \
-_GENERIC \
-_VISIBILITY interface _NAME {
 
-#ifdef __SLANG_CPP__
+[require(cpp)]
 bool operator==(NativeString left, NativeString right)
 {
-    __requirePrelude(R"(
-		#include <cstring>
-    )");
+    __requirePrelude(R"(#include <cstring>)");
     __intrinsic_asm R"(strcmp($0, $1) == 0)";
 }
+[require(cpp)]
 bool operator!=(NativeString left, NativeString right)
 {
     return !(left == right);
 }
 
+[require(cpp)]
+void __copy_data_to_ptr<T>(Ptr<void> ptr, T data) {
+    __intrinsic_asm R"(memcpy($0, &$1, sizeof($T1)))";\
+}
+
+#ifdef __SLANG_CPP__
 #define IMPLEMENT_PLUGIN(INTERFACE, IMPLEMENTATION) \
     export __extern_cpp NativeString __interface_name() { return #INTERFACE; }\
     export __extern_cpp NativeString __implementation_name() { return #IMPLEMENTATION; }\
@@ -215,9 +205,6 @@ bool operator!=(NativeString left, NativeString right)
 		IMPLEMENT_VARIANTS(IMPLEMENTATION, SIZE_OF, __DYSLANG_VARIANTS__)\
         return 0;\
     }\
-	void __create_object_inplace_helper<T>(Ptr<void> ptr, T data) {\
-		__intrinsic_asm R"(memcpy($0, &$1, sizeof($T1)))";\
-	}\
 	export __extern_cpp void __create_object(dyslang::IProperties props, NativeString variant, Ptr<void> ptr) {\
 		IMPLEMENT_VARIANTS(IMPLEMENTATION, CREATE_OBJECT_INPLACE, __DYSLANG_VARIANTS__)\
 	}\
@@ -245,14 +232,9 @@ bool operator!=(NativeString left, NativeString right)
 #include <dyslang/slangc.h>
 
 namespace dyslang {
-    template <typename Tuple>
-    struct tuple_to_variant;
-
-    template <typename... Ts>
-    struct tuple_to_variant<std::tuple<Ts...>>
-    {
-        using type = std::variant<Ts ...>;
-    };
+    template <typename Tuple> struct tuple_to_variant;
+    template <typename... Ts> struct tuple_to_variant<std::tuple<Ts...>>
+    { using type = std::variant<Ts ...>; };
 
 	template <typename T> concept arithmetic = std::integral<T> || std::floating_point<T>;
     template <typename T> inline constexpr bool is_arithmetic_v = std::is_floating_point_v<T> || std::is_integral_v<T>;
@@ -264,31 +246,9 @@ namespace dyslang {
 
     // glsl/hlsl/slang bool is 32 bits
     // c++ bool is 8 bits
-    //struct b32
-    //{
-    //    int32_t value; // should it be int32_t or uint32_t?
-    //    b32() : value{} {}
-    //    b32(const bool v) : value{ v ? 1 : 0 } {}
-    //    operator bool() const { return value > 0; }
-    //};
     using b32 = uint32_t;
     using CString = const char*;
     using size_t = std::size_t;
-
-    // our version of the slang Optional
-    template <typename T>
-    struct Optional
-    {
-        Optional() : hasValue{}, value{} {}
-        Optional(std::nullopt_t) : Optional{} {}
-        Optional(const T& v) : hasValue{ true }, value{ v } {}
-
-        b32 hasValue;
-        T value;
-
-        Optional& operator=(const T& v) { value = v; hasValue = 1; return *this; }
-        Optional& operator=(const std::nullopt_t&) { value = {}; hasValue = 0; return *this; }
-    };
 
     template<typename T> using DynamicArray = std::span<T>;
 }
@@ -624,7 +584,7 @@ struct Properties {
         template <typename T> struct parameter_type_traits<T*> { static constexpr uint64_t value = 3; };
 	}
 
-	struct Properties : public IProperties
+	struct Properties : IProperties
 	{
 	    using SupportedTypes = std::tuple<
             void*, int32_t*, uint32_t*, int64_t*, uint64_t*, float*, double*
@@ -658,8 +618,8 @@ struct Properties {
 	#define dyslang_properties_get(TYPE) \
 	    vbegin(uint64_t) get(const dyslang::CString key, TYPE** ptr, size_t* dims, int64_t* stride_in_bytes) SLANG_OVERRIDE { \
 	        auto& entry = properties[key]; \
-        	if (!std::holds_alternative<TYPE*>(entry.ptr))\
-				std::cout << "Property \'" + std::string(key) + "\' type mismatch." << std::endl;\
+        	if (!std::holds_alternative<TYPE*>(entry.ptr)) \
+				std::cout << "Property \'" + std::string(key) + "\' type mismatch." << std::endl; \
 	        *ptr = std::get<TYPE*>(entry.ptr); \
 	        *(vector<size_t, 3>*)dims = entry.dimension; \
             *(vector<int64_t, 3>*)stride_in_bytes = entry.stride_in_bytes; \
@@ -790,6 +750,5 @@ struct Properties {
 	    };
 	    std::map<const char*, Entry, cmp_str> properties;
 	};
-
 #endif
 }
