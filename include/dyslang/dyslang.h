@@ -351,9 +351,9 @@ namespace dyslang
     };
     #endif
 
-#ifdef __SLANG_CPP__
-
+#ifdef __SLANG__
 namespace __private {
+    [require(cpp)]
     T get<T>(dyslang::CString key, dyslang::IProperties properties) {
         __requirePrelude(R"(
                 #include <type_traits>
@@ -469,6 +469,7 @@ namespace __private {
         __intrinsic_asm R"(getProperty($0, CompileTimeInit<$TR>::get(), $1))";
     }
 
+    [require(cpp)]
     void set<T>(dyslang::CString key, T value, dyslang::IProperties properties) {
         __requirePrelude(R"(
 			template <typename T, typename PROPERTIES_T> 
@@ -521,8 +522,6 @@ namespace __private {
         __intrinsic_asm R"(setProperty($0, $1, $2))";
     }
 }
-#endif
-#ifdef __SLANG__
 
 struct Properties {
     private dyslang::IProperties __properties;
@@ -530,25 +529,32 @@ struct Properties {
         __properties = properties;
     }
     bool has(dyslang::CString key) {
-#ifdef __SLANG_CPP__
-        return (bool)__properties.has(key);
-#else
-        return false;
-#endif
+
+        __target_switch
+        {
+        case cpp: 
+            return (bool)__properties.has(key);
+        default: 
+            return false;
+        }
     }
 
     T get<T>(dyslang::CString key) {
-#ifdef __SLANG_CPP__
-        return __private::get<T>(key, __properties);
-#else
-        return { {} };
-#endif
+        __target_switch
+        {
+        case cpp: 
+            return __private::get<T>(key, __properties);
+        default: 
+            return {};
+        }
     }
 
     void set<T>(dyslang::CString key, T value) {
-#ifdef __SLANG_CPP__
-        __private::set<T>(key, value, __properties);
-#endif
+        __target_switch
+        {
+        case cpp: 
+            __private::set<T>(key, value, __properties);
+        }
     }
 };
 
