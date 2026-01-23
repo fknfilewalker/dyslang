@@ -92,8 +92,8 @@ namespace dyslang
         //void traverse(Object<void>& obj, Properties& props);
         //size_t size_of(Object<void>& obj);
 
-        //std::function<void(IProperties*, const char*, void*)> f_create;
-        //std::function<void(IProperties*, const char*, void*)> f_traverse;
+        std::function<void(IProperties*, const char*, void*)> f_create;
+        std::function<void(IProperties*, const char*, void*)> f_traverse;
         std::function<size_t(const char*)> f_size_of;
 
         std::unordered_map<std::string, Plugin2> interfaces;

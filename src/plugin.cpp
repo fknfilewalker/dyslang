@@ -139,12 +139,18 @@ R"([require(cpp)] bool operator==(NativeString left, NativeString right)
 		}
 
         // create function
-        additional += "export __extern_cpp void __create(uint32_t *id, void *out, NativeString variant) {\n";
+        additional += "export __extern_cpp void __create(uint32_t* id, NativeString variant, void* out) {\n";
         for (auto& plugin : interfaces) {
             SlangInt count = 0;
             for (auto& impl : plugin.second.implementations) {
                 additional += "    // " + std::to_string(count++) + " " + impl._name + ");\n";
             }
+        }
+        additional += "}\n";
+
+        additional += "export __extern_cpp void __traverse(void*, NativeString variant, void*) {\n";
+        for (auto& plugin : interfaces) {
+            additional += "    // " + plugin.second._name + ");\n";
         }
         additional += "}\n";
 
@@ -160,23 +166,22 @@ R"([require(cpp)] bool operator==(NativeString left, NativeString right)
         std::printf("%s\n", additional.c_str());
 
         add_module("cpp_only", "", additional);
-
-        //slang::IEntryPoint* entryPoint;
-        //const SlangResult result = ((slang::IModule*)components.back().get())->findEntryPointByName("cpp_main", &entryPoint);
-        //checkError(_diagnostic);
-        //if (SLANG_FAILED(result)) throw std::runtime_error("slang: entrypoint");
-        //if (!entryPoint) throw std::runtime_error("slang: entrypoint null");
-        //components.emplace_back(entryPoint);
     }
     _p = _p->compose();
 
-    //Slang::ComPtr<slang::IBlob> blob;
-    //const SlangResult result = _p->components.back()->getTargetCode(1, blob.writeRef(), _p->diagnosticsBlob.writeRef());
-    //checkError(_p->diagnosticsBlob);
-    //if (SLANG_FAILED(result)) throw std::runtime_error("slang: dll error");
-    //ISlangSharedLibrary* dll = (ISlangSharedLibrary*)blob.get();
-    //typedef size_t(*FuncType)(const char*);
-    //f_size_of = (FuncType)dll->findFuncByName("__size_of");
-    //size_t s = f_size_of("");
+    Slang::ComPtr<ISlangSharedLibrary> dylib;
+    const SlangResult result = _p->components.back()->getTargetHostCallable(1, dylib.writeRef(), _p->diagnosticsBlob.writeRef());
+    if (SLANG_FAILED(result)) throw std::runtime_error("slang: dll error");
+
+    typedef void(*TouchFuncType)(IProperties*, const char*, void*);
+    typedef size_t(*SizeOfFuncType)(const char*);
+
+	f_create = (TouchFuncType)dylib->findFuncByName("__create");
+	f_traverse = (TouchFuncType)dylib->findFuncByName("__traverse");
+    f_size_of = (SizeOfFuncType)dylib->findFuncByName("__size_of");
+    size_t bsdf_size = f_size_of("IBsdf<float>");
+    size_t diffuse_size = f_size_of("Diffuse<float>");
+    size_t shape_size = f_size_of("IShape<float>");
+    size_t cube_size = f_size_of("Cube<float>");
     return;
 }
