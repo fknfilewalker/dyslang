@@ -1,6 +1,9 @@
-#include "../../include/dyslang/dyslang.h"
+// #include "../../include/dyslang/dyslang.h"
 [anyValueSize(256)]
 public interface IEmitter<Real : __BuiltinFloatingPointType> {
+
+    // [mutating, require(cpp)] void traverse(dyslang::Properties properties);
+
     vector<Real, 3> illuminate(vector<Real, 3>, vector<Real, 3>);
-    annotations(Differentiable) vector<Real, 3> sample();
+    [Differentiable] vector<Real, 3> sample();
 }

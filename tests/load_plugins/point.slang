@@ -53,7 +53,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         arr = { Real(1.0), Real(2.0), Real(3.0), Real(4.0), Real(5.0), Real(6.0), Real(7.0), Real(8.0), Real(9.0), Real(10.0) };
     }
 
-    [mutating]
+    [mutating, require(cpp)]
     void traverse(dyslang::Properties properties) {
         properties.set("id", &id);
         properties.set("position", &position);
@@ -77,5 +77,36 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
 
     [Differentiable, NoDiffThis] vector<Real, 3> sample() { return position; }
 };
+
+
+// Idea
+// Plugins plugins;
+// auto emitter = plugins.register_emitter_interface("IEmitter", "<float>");
+// emitter.add("point.slang", "PointLight", "<float>");
+// emitter.add("spot.slang", "SpotLight", "<float>");
+// emitter.__create_IEmitter/__traverse_IEmitter  ...etc.
+
+export __extern_cpp void __create_IEmitter(dyslang::IProperties props, uint32_t *id, void *out, NativeString variant) {
+    dyslang::Properties p = dyslang::Properties(props);
+    var a = PointLight<float>(p);
+    // createDynamicObject bugged for now
+    if (variant == "PointLight") {
+        id[0] = 0; __copy_data_to_ptr(out, PointLight<float>(p));
+    }
+}
+
+export __extern_cpp void __traverse_IEmitter(dyslang::IProperties props, IEmitter<float> *in) {
+    dyslang::Properties p = dyslang::Properties(props);
+    // in->traverse(p);
+}
+
+export __extern_cpp size_t __size_IEmitter(NativeString variant) {
+    return sizeof(IEmitter<float>);
+}
+
+export __extern_cpp size_t __size_IEmitter_impls(NativeString variant) {
+    if (variant == "PointLight") return sizeof(PointLight<float>);
+    return 0;
+}
 
 IMPLEMENT_PLUGIN(IEmitter, PointLight)

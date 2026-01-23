@@ -259,9 +259,9 @@ namespace dyslang {
 	typealias CString = NativeString;
 
     __generic<typename T>
-	struct DynamicArray {
-        T* data;
-        uint64_t count;
+	public struct DynamicArray {
+        public T* data;
+        public uint64_t count;
     };
 }
 #endif
@@ -298,9 +298,9 @@ namespace dyslang
 
     // todo: use DescriptorHandle directly
     #ifdef __SLANG__
-    internal struct _DescriptorHandle<T:IOpaqueDescriptor> {
-        internal vector<uint32_t, 2> id;
-        internal DescriptorHandle<T> get() {
+    public struct _DescriptorHandle<T:IOpaqueDescriptor> {
+        public vector<uint32_t, 2> id;
+        public DescriptorHandle<T> get() {
             return {id};
         }
     };
@@ -483,12 +483,12 @@ namespace __private {
     }
 }
 
-struct Properties {
+public struct Properties {
     private dyslang::IProperties __properties;
     __init(dyslang::IProperties properties){
         __properties = properties;
     }
-    bool has(dyslang::CString key) {
+    public bool has(dyslang::CString key) {
 
         __target_switch
         {
@@ -499,7 +499,7 @@ struct Properties {
         }
     }
 
-    T get<T>(dyslang::CString key) {
+    public T get<T>(dyslang::CString key) {
         __target_switch
         {
         case cpp: 
@@ -509,7 +509,7 @@ struct Properties {
         }
     }
 
-    void set<T>(dyslang::CString key, T value) {
+    public void set<T>(dyslang::CString key, T value) {
         __target_switch
         {
         case cpp: 
