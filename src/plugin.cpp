@@ -62,3 +62,121 @@ const dyslang::SlangBinaryBlob* dyslang::Plugin::slang_module_blob() const
 {
     return &slang_module;
 }
+
+// ----------
+
+void dyslang::Plugin2::add_implementation(const std::string& source, const std::string& name)
+{
+    implementations.emplace_back(source, name);
+}
+
+void dyslang::Plugins::compose()
+{
+    _p = _p->compose();
+}
+
+void dyslang::Plugins::add_interface(const std::string& source, const std::string& name)
+{
+	interfaces[name] = Plugin2{._source = source, ._name = name, .implementations = std::vector<Implementation>() };
+}
+
+namespace
+{
+    void checkError(slang::IBlob* diagnosticsBlob)
+    {
+        if (diagnosticsBlob != nullptr)
+        {
+            printf("%s", static_cast<const char*>(diagnosticsBlob->getBufferPointer()));
+        }
+        diagnosticsBlob = nullptr;
+    }
+
+}
+
+void dyslang::Plugins::prepare()
+{
+    // add sources
+	for (auto& plugin : interfaces) {
+        add_module(plugin.second._source);
+        for (auto& impl : plugin.second.implementations) {
+            add_module(impl._source);
+        }
+    }
+    _p = _p->compose();
+
+	// add type conformance
+    for (auto& plugin : interfaces) {
+        int64_t count = 0;
+        for (auto& impl : plugin.second.implementations) {
+            add_type_conformance(plugin.second._name, impl._name, count++);
+        }
+    }
+
+    // inject code
+    {
+        std::string additional;
+        additional.reserve(1028);
+    	additional +=
+R"([require(cpp)] bool operator==(NativeString left, NativeString right)
+{
+    __requirePrelude("#include <cstring>");
+    __intrinsic_asm "strcmp($0, $1) == 0";
+}
+[require(cpp)] bool operator!=(NativeString left, NativeString right)
+{
+    return !(left == right);
+}
+[require(cpp)] void __copy_data_to_ptr<T>(Ptr<void> ptr, T data) {
+    __intrinsic_asm "memcpy($0, &$1, sizeof($T1));";
+}
+)";
+
+		for (auto& plugin : interfaces) {
+		    additional += "import " + std::filesystem::path(plugin.second._source).stem().string() + ";\n";
+		    for (auto& impl : plugin.second.implementations) {
+	            additional += "import " + std::filesystem::path(impl._source).stem().string() + ";\n";
+		    }
+		}
+
+        // create function
+        additional += "export __extern_cpp void __create(uint32_t *id, void *out, NativeString variant) {\n";
+        for (auto& plugin : interfaces) {
+            SlangInt count = 0;
+            for (auto& impl : plugin.second.implementations) {
+                additional += "    // " + std::to_string(count++) + " " + impl._name + ");\n";
+            }
+        }
+        additional += "}\n";
+
+        // size function
+        additional += "export __extern_cpp size_t __size_of(NativeString variant) {\n";
+        for (auto& plugin : interfaces) {
+            additional += "    if(variant == \"" + plugin.first + "\") return sizeof(" + plugin.first + ");\n";
+            for (auto& impl : plugin.second.implementations) {
+                additional += "    if(variant == \"" + impl._name + "\") return sizeof(" + impl._name + ");\n";
+            }
+        }
+        additional += "    return 0;\n}\n";
+        std::printf("%s\n", additional.c_str());
+
+        add_module("cpp_only", "", additional);
+
+        //slang::IEntryPoint* entryPoint;
+        //const SlangResult result = ((slang::IModule*)components.back().get())->findEntryPointByName("cpp_main", &entryPoint);
+        //checkError(_diagnostic);
+        //if (SLANG_FAILED(result)) throw std::runtime_error("slang: entrypoint");
+        //if (!entryPoint) throw std::runtime_error("slang: entrypoint null");
+        //components.emplace_back(entryPoint);
+    }
+    _p = _p->compose();
+
+    //Slang::ComPtr<slang::IBlob> blob;
+    //const SlangResult result = _p->components.back()->getTargetCode(1, blob.writeRef(), _p->diagnosticsBlob.writeRef());
+    //checkError(_p->diagnosticsBlob);
+    //if (SLANG_FAILED(result)) throw std::runtime_error("slang: dll error");
+    //ISlangSharedLibrary* dll = (ISlangSharedLibrary*)blob.get();
+    //typedef size_t(*FuncType)(const char*);
+    //f_size_of = (FuncType)dll->findFuncByName("__size_of");
+    //size_t s = f_size_of("");
+    return;
+}

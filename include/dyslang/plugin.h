@@ -2,12 +2,14 @@
 #include <string>
 #include <functional>
 #include <filesystem>
+#include <slang-com-ptr.h>
 #include <slang.h>
 #include <dyslang/platform.h>
+#include <dyslang/slangc.h>
 
 namespace dyslang
 {
-    struct IProperties;
+	struct IProperties;
     struct Properties;
     struct Plugin;
     template <typename T> struct Object;
@@ -67,21 +69,34 @@ namespace dyslang
         std::function<uint8_t*()> f_slang_module_ir_data_ptr;
     };
 
-    struct Plugins
+    struct Implementation
     {
-        Plugins();
-        void add_interface(const char* source, const char* name, const char* specialization);
-        void add_implementation(const char* source, const char* name, const char* specialization);
+        std::string _source, _name;
+    };
+    struct Plugin2
+    {
+        std::string _source, _name;
+        std::vector<Implementation> implementations;
+        void add_implementation(const std::string& source, const std::string& name);
+    };
 
-        std::unique_ptr<Object<void>> create(const char* name, Properties& props);
-        void traverse(Object<void>& obj, Properties& props);
-        size_t size_of(Object<void>& obj);
+    struct Plugins : dyslang::Slangc
+    {
+		Plugins(const std::vector<const char*>& includes, const std::vector<ArgPair>& defines) : Slangc(includes, defines) {}
 
-        [[nodiscard]] const SlangBinaryBlob* slang_module_blob() const;
+        void add_interface(const std::string& source, const std::string& name);
+        void prepare();
+        void compose();
 
-        std::function<void(IProperties*, const char*, void*)> f_create;
-        std::function<void(IProperties*, const char*, void*)> f_traverse;
-        std::function<unsigned int (const char*)> f_size_of;
+        //std::unique_ptr<Object<void>> create(const char* name, Properties& props);
+        //void traverse(Object<void>& obj, Properties& props);
+        //size_t size_of(Object<void>& obj);
+
+        //std::function<void(IProperties*, const char*, void*)> f_create;
+        //std::function<void(IProperties*, const char*, void*)> f_traverse;
+        std::function<size_t(const char*)> f_size_of;
+
+        std::unordered_map<std::string, Plugin2> interfaces;
     };
 
     struct ObjectData {
