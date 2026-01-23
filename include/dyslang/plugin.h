@@ -67,6 +67,23 @@ namespace dyslang
         std::function<uint8_t*()> f_slang_module_ir_data_ptr;
     };
 
+    struct Plugins
+    {
+        Plugins();
+        void add_interface(const char* source, const char* name, const char* specialization);
+        void add_implementation(const char* source, const char* name, const char* specialization);
+
+        std::unique_ptr<Object<void>> create(const char* name, Properties& props);
+        void traverse(Object<void>& obj, Properties& props);
+        size_t size_of(Object<void>& obj);
+
+        [[nodiscard]] const SlangBinaryBlob* slang_module_blob() const;
+
+        std::function<void(IProperties*, const char*, void*)> f_create;
+        std::function<void(IProperties*, const char*, void*)> f_traverse;
+        std::function<unsigned int (const char*)> f_size_of;
+    };
+
     struct ObjectData {
         static constexpr size_t rtti_header_size = 4u * sizeof(uint32_t);
         explicit ObjectData(const size_t data_size) : data(data_size + rtti_header_size) {}
