@@ -139,18 +139,23 @@ R"([require(cpp)] bool operator==(NativeString left, NativeString right)
 		}
 
         // create function
-        additional += "export __extern_cpp void __create(uint32_t* id, NativeString variant, void* out) {\n";
+        additional += "export __extern_cpp void __create(void*, NativeString variant, void* out) {\n";
+        additional += "    uint32_t* id = (uint32_t*)out;\n";
         for (auto& plugin : interfaces) {
             SlangInt count = 0;
             for (auto& impl : plugin.second.implementations) {
-                additional += "    // " + std::to_string(count++) + " " + impl._name + ");\n";
+                additional += "    if(variant == \"" + impl._name + "\") { id[2] = " + std::to_string(count++) + "; __copy_data_to_ptr((void*)&id[4], " + impl._name + "()); }\n";
             }
         }
+		
         additional += "}\n";
 
-        additional += "export __extern_cpp void __traverse(void*, NativeString variant, void*) {\n";
+        additional += "export __extern_cpp void __traverse(void*, NativeString variant, void* in) {\n";
         for (auto& plugin : interfaces) {
-            additional += "    // " + plugin.second._name + ");\n";
+            additional += "    if(variant == \"" + plugin.second._name + "\") ((" + plugin.second._name +"*)in)->traverse();\n";
+            for (auto& impl : plugin.second.implementations) {
+                additional += "    if(variant == \"" + impl._name + "\") ((" + impl._name + "*)in)->traverse();\n";
+            }
         }
         additional += "}\n";
 
@@ -176,8 +181,14 @@ R"([require(cpp)] bool operator==(NativeString left, NativeString right)
     typedef void(*TouchFuncType)(IProperties*, const char*, void*);
     typedef size_t(*SizeOfFuncType)(const char*);
 
+	std::array<uint32_t, 100> bytes = {};
+
 	f_create = (TouchFuncType)dylib->findFuncByName("__create");
+	f_create(nullptr, "Diffuse<float>", bytes.data());
+
 	f_traverse = (TouchFuncType)dylib->findFuncByName("__traverse");
+	f_traverse(nullptr, "IBsdf<float>", bytes.data());
+
     f_size_of = (SizeOfFuncType)dylib->findFuncByName("__size_of");
     size_t bsdf_size = f_size_of("IBsdf<float>");
     size_t diffuse_size = f_size_of("Diffuse<float>");
