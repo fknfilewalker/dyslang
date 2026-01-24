@@ -370,6 +370,7 @@ internal struct Properties : dyslang::IProperties {
         // create function
         additional += "export __extern_cpp void __create(__private::IProperties prop, NativeString variant, void* data) {\n";
         additional += "    uint32_t* id = (uint32_t*)data;\n";
+        additional += "    id[0] = 1;\n";
         for (auto& plugin : interfaces) {
             SlangInt count = 0;
             for (auto& impl : plugin.second.implementations) {
@@ -411,12 +412,12 @@ internal struct Properties : dyslang::IProperties {
     typedef void(*TouchFuncType)(IProperties*, const char*, void*);
     typedef size_t(*SizeOfFuncType)(const char*);
 
-	std::array<uint32_t, 100> bytes = {};
 
 	f_create = (TouchFuncType)dylib->findFuncByName("__create");
 	f_traverse = (TouchFuncType)dylib->findFuncByName("__traverse");
     f_size_of = (SizeOfFuncType)dylib->findFuncByName("__size_of");
 
+	std::array<uint32_t, 100> bytes = {};
 	dyslang::Properties props_in;
 	std::array<float, 3> input_color = { 0.8f, 0.1f, 0.3f };
 	props_in.set("color", input_color);
