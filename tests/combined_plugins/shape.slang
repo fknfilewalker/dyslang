@@ -1,3 +1,4 @@
+import dyslang;
 
 [anyValueSize(128)]
 public interface IShape<Real : __BuiltinFloatingPointType> {

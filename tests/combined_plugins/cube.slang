@@ -1,5 +1,6 @@
 import shape;
 import bsdf;
+import dyslang;
 
 public struct Cube<Real : __BuiltinFloatingPointType> : IShape<Real> {
     IBsdf<Real> *bsdf;

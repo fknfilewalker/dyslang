@@ -11,7 +11,7 @@ int main(int argc, char* argv[]) {
     std::filesystem::path path = dyslang::platform::executable_filepath().parent_path();
     std::cout << "Executable Dir: " << path << '\n';
 
-    dyslang::Plugins plugins({ "tests/combined_plugins/" }, {});
+    dyslang::Plugins plugins({ "", "tests/combined_plugins/" }, {});
     plugins.add_interface("shape.slang", "IShape" VARIANT);
     plugins.add_interface("bsdf.slang", "IBsdf" VARIANT);
     plugins.interfaces["IShape" VARIANT].add_implementation("cube.slang", "Cube" VARIANT);
