@@ -69,6 +69,34 @@ namespace dyslang
         std::function<uint8_t*()> f_slang_module_ir_data_ptr;
     };
 
+    struct ObjectData {
+        static constexpr size_t rtti_header_size = 4u * sizeof(uint32_t);
+        explicit ObjectData(const size_t data_size) : data(data_size + rtti_header_size) {}
+        uint8_t* get_rtti_header_ptr() { return data.data(); }
+        uint8_t* get_data_ptr() { return data.data() + rtti_header_size; }
+        [[nodiscard]] size_t get_data_size() const { return data.size() - rtti_header_size; }
+        [[nodiscard]] size_t get_size() const { return data.size(); }
+        // from slang/slang-session.cpp
+        // Slang RTTI header format:
+        // byte 0-7: pointer to RTTI struct describing the type. (not used for now, set to 1 for valid
+        // types, and 0 to represent null).
+        // byte 8-11: 32-bit sequential ID of the type conformance witness.
+        // byte 12-15: unused.
+        void set_type_conformance_id(const uint32_t id) {
+            *reinterpret_cast<uint32_t*>(data.data() + 0u * sizeof(uint32_t)) = 1;
+            *reinterpret_cast<uint32_t*>(data.data() + 2u * sizeof(uint32_t)) = id;
+        }
+        [[nodiscard]] uint32_t get_type_conformance_id() const { return *reinterpret_cast<const uint32_t*>(data.data() + 2u * sizeof(uint32_t)); }
+        std::vector<uint8_t> data;
+    };
+
+    struct Object2
+    {
+        std::string implementation_name;
+        std::string interface_name;
+        ObjectData data;
+    };
+
     struct Implementation
     {
         std::string _source, _name;
@@ -88,36 +116,22 @@ namespace dyslang
         void prepare();
         void compose();
 
-        //std::unique_ptr<Object<void>> create(const char* name, Properties& props);
-        //void traverse(Object<void>& obj, Properties& props);
-        //size_t size_of(Object<void>& obj);
+        Object2 create(const std::string& implementation_name, const std::string& interface_name, dyslang::Properties& props) const
+		{
+            Object2 o = { implementation_name, interface_name, ObjectData(f_size_of(interface_name.c_str()) - ObjectData::rtti_header_size)};
+			f_create((IProperties*)&props, implementation_name.c_str(), o.data.data.data());
+            return o;
+		}
+        void traverse(Object2& object, Properties& props) const
+        {
+			f_traverse((IProperties*)&props, object.implementation_name.c_str(), object.data.data.data());
+        }
 
         std::function<void(IProperties*, const char*, void*)> f_create;
         std::function<void(IProperties*, const char*, void*)> f_traverse;
         std::function<size_t(const char*)> f_size_of;
 
         std::unordered_map<std::string, Plugin2> interfaces;
-    };
-
-    struct ObjectData {
-        static constexpr size_t rtti_header_size = 4u * sizeof(uint32_t);
-        explicit ObjectData(const size_t data_size) : data(data_size + rtti_header_size) {}
-        uint8_t* get_rtti_header_ptr() { return data.data(); }
-        uint8_t* get_data_ptr() { return data.data() + rtti_header_size; }
-        [[nodiscard]] size_t get_data_size() const { return data.size() - rtti_header_size; }
-        [[nodiscard]] size_t get_size() const { return data.size(); }
-        // from slang/slang-session.cpp
-        // Slang RTTI header format:
-        // byte 0-7: pointer to RTTI struct describing the type. (not used for now, set to 1 for valid
-        // types, and 0 to represent null).
-        // byte 8-11: 32-bit sequential ID of the type conformance witness.
-        // byte 12-15: unused.
-        void set_type_conformance_id(const uint32_t id) { 
-            *reinterpret_cast<uint32_t*>(data.data() + 0u * sizeof(uint32_t)) = 1;
-            *reinterpret_cast<uint32_t*>(data.data() + 2u * sizeof(uint32_t)) = id;
-        }
-		[[nodiscard]] uint32_t get_type_conformance_id() const { return *reinterpret_cast<const uint32_t*>(data.data() + 2u * sizeof(uint32_t)); }
-        std::vector<uint8_t> data;
     };
 
     template <typename T>

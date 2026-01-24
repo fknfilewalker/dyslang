@@ -27,6 +27,8 @@ int main(int argc, char* argv[]) {
         plugins.f_create(&props_in, "Diffuse" VARIANT, data.data());
         std::cout << props_in.to_string() << "\n";
 
+        auto diffuse = plugins.create("Diffuse" VARIANT, "IBsdf" VARIANT, props_in);
+
         dyslang::Properties props_out;
         plugins.f_traverse(&props_out, "Diffuse" VARIANT, data.data());
         std::cout << props_out.to_string() << "\n";
