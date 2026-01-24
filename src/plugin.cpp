@@ -417,20 +417,5 @@ internal struct Properties : dyslang::IProperties {
 	f_traverse = (TouchFuncType)dylib->findFuncByName("__traverse");
     f_size_of = (SizeOfFuncType)dylib->findFuncByName("__size_of");
 
-	std::array<uint32_t, 100> bytes = {};
-	dyslang::Properties props_in;
-	std::array<float, 3> input_color = { 0.8f, 0.1f, 0.3f };
-	props_in.set("color", input_color);
-	f_create(&props_in, "Diffuse<float>", bytes.data());
-    std::cout << props_in.to_string() << "\n";
 
-    dyslang::Properties props_out;
-	f_traverse(&props_out, "Diffuse<float>", bytes.data());
-    std::cout << props_out.to_string() << "\n";
-
-    size_t bsdf_size = f_size_of("IBsdf<float>");
-    size_t diffuse_size = f_size_of("Diffuse<float>");
-    size_t shape_size = f_size_of("IShape<float>");
-    size_t cube_size = f_size_of("Cube<float>");
-    return;
 }

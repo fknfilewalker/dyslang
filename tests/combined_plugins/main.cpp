@@ -18,6 +18,25 @@ int main(int argc, char* argv[]) {
     plugins.interfaces["IBsdf" VARIANT].add_implementation("diffuse.slang", "Diffuse" VARIANT);
     plugins.prepare();
 
+    {
+        std::vector<uint32_t> data;
+        data.resize(plugins.f_size_of("IBsdf" VARIANT) / 4);
+        dyslang::Properties props_in;
+        std::array<float, 3> input_color = { 0.8f, 0.1f, 0.3f };
+        props_in.set("color", input_color);
+        plugins.f_create(&props_in, "Diffuse" VARIANT, data.data());
+        std::cout << props_in.to_string() << "\n";
+
+        dyslang::Properties props_out;
+        plugins.f_traverse(&props_out, "Diffuse" VARIANT, data.data());
+        std::cout << props_out.to_string() << "\n";
+
+        size_t bsdf_size = plugins.f_size_of("IBsdf" VARIANT);
+        size_t diffuse_size = plugins.f_size_of("Diffuse" VARIANT);
+        size_t shape_size = plugins.f_size_of("IShape" VARIANT);
+        size_t cube_size = plugins.f_size_of("Cube" VARIANT);
+    }
+
     plugins.add_module("main", { "main" });
     plugins.compose();
     auto output = plugins.spv();
