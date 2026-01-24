@@ -99,20 +99,19 @@ namespace dyslang
 
     struct Implementation
     {
-        std::string _source, _name;
+        std::string source, name;
     };
     struct Plugin
     {
-        std::string _source, _name;
+        std::string source, name;
         std::vector<Implementation> implementations;
-        void add_implementation(const std::string& source, const std::string& name);
     };
 
     struct Plugins : dyslang::Slangc
     {
 		Plugins(const std::vector<const char*>& includes, const std::vector<ArgPair>& defines) : Slangc(includes, defines) {}
 
-        void add_interface(const std::string& source, const std::string& name);
+        void add_interface(const std::string& source, const std::string& name, const std::vector<Implementation>& implementations);
         void prepare();
         void compose();
 

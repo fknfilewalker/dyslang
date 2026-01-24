@@ -67,41 +67,23 @@ const dyslang::SlangBinaryBlob* dyslang::CompPlugin::slang_module_blob() const
 
 // ----------
 
-void dyslang::Plugin::add_implementation(const std::string& source, const std::string& name)
-{
-    implementations.emplace_back(source, name);
-}
-
 void dyslang::Plugins::compose()
 {
     _p = _p->compose();
 }
 
-void dyslang::Plugins::add_interface(const std::string& source, const std::string& name)
+void dyslang::Plugins::add_interface(const std::string& source, const std::string& name, const std::vector<Implementation>& implementations)
 {
-	interfaces[name] = Plugin{._source = source, ._name = name, .implementations = std::vector<Implementation>() };
-}
-
-namespace
-{
-    void checkError(slang::IBlob* diagnosticsBlob)
-    {
-        if (diagnosticsBlob != nullptr)
-        {
-            printf("%s", static_cast<const char*>(diagnosticsBlob->getBufferPointer()));
-        }
-        diagnosticsBlob = nullptr;
-    }
-
+	interfaces[name] = Plugin{.source = source, .name = name, .implementations = implementations };
 }
 
 void dyslang::Plugins::prepare()
 {
     // add sources
 	for (auto& plugin : interfaces) {
-        add_module(plugin.second._source);
+        add_module(plugin.second.source);
         for (auto& impl : plugin.second.implementations) {
-            add_module(impl._source);
+            add_module(impl.source);
         }
     }
     _p = _p->compose();
@@ -110,7 +92,7 @@ void dyslang::Plugins::prepare()
     for (auto& plugin : interfaces) {
         int64_t count = 0;
         for (auto& impl : plugin.second.implementations) {
-            add_type_conformance(plugin.second._name, impl._name, count++);
+            add_type_conformance(plugin.second.name, impl.name, count++);
         }
     }
 
@@ -361,9 +343,9 @@ internal struct Properties : dyslang::IProperties {
 )tag";
 
 		for (auto& plugin : interfaces) {
-		    additional += "import " + std::filesystem::path(plugin.second._source).stem().string() + ";\n";
+		    additional += "import " + std::filesystem::path(plugin.second.source).stem().string() + ";\n";
 		    for (auto& impl : plugin.second.implementations) {
-	            additional += "import " + std::filesystem::path(impl._source).stem().string() + ";\n";
+	            additional += "import " + std::filesystem::path(impl.source).stem().string() + ";\n";
 		    }
 		}
 
@@ -374,7 +356,7 @@ internal struct Properties : dyslang::IProperties {
         for (auto& plugin : interfaces) {
             SlangInt count = 0;
             for (auto& impl : plugin.second.implementations) {
-                additional += "    if(variant == \"" + impl._name + "\") { id[2] = " + std::to_string(count++) + "; __copy_data_to_ptr((void*)&id[4], " + impl._name + "(Properties(prop))); }\n";
+                additional += "    if(variant == \"" + impl.name + "\") { id[2] = " + std::to_string(count++) + "; __copy_data_to_ptr((void*)&id[4], " + impl.name + "(Properties(prop))); }\n";
             }
         }
 		
@@ -385,7 +367,7 @@ internal struct Properties : dyslang::IProperties {
         for (auto& plugin : interfaces) {
             //additional += "    if(variant == \"" + plugin.second._name + "\") ((" + plugin.second._name +"*)data)->traverse(Properties(prop));\n";
             for (auto& impl : plugin.second.implementations) {
-                additional += "    if(variant == \"" + impl._name + "\") ((" + impl._name + "*)(void*)&id[4])->traverse(Properties(prop));\n";
+                additional += "    if(variant == \"" + impl.name + "\") ((" + impl.name + "*)(void*)&id[4])->traverse(Properties(prop));\n";
             }
         }
         additional += "}\n";
@@ -395,7 +377,7 @@ internal struct Properties : dyslang::IProperties {
         for (auto& plugin : interfaces) {
             additional += "    if(variant == \"" + plugin.first + "\") return sizeof(" + plugin.first + ");\n";
             for (auto& impl : plugin.second.implementations) {
-                additional += "    if(variant == \"" + impl._name + "\") return sizeof(" + impl._name + ");\n";
+                additional += "    if(variant == \"" + impl.name + "\") return sizeof(" + impl.name + ");\n";
             }
         }
         additional += "    return 0;\n}\n";

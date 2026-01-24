@@ -12,10 +12,8 @@ int main(int argc, char* argv[]) {
     std::cout << "Executable Dir: " << path << '\n';
 
     dyslang::Plugins plugins({ "", "tests/combined_plugins/" }, {});
-    plugins.add_interface("shape.slang", "IShape" VARIANT);
-    plugins.add_interface("bsdf.slang", "IBsdf" VARIANT);
-    plugins.interfaces["IShape" VARIANT].add_implementation("cube.slang", "Cube" VARIANT);
-    plugins.interfaces["IBsdf" VARIANT].add_implementation("diffuse.slang", "Diffuse" VARIANT);
+    plugins.add_interface("shape.slang", "IShape" VARIANT, { { "cube.slang", "Cube" VARIANT } });
+    plugins.add_interface("bsdf.slang", "IBsdf" VARIANT, { { "diffuse.slang", "Diffuse" VARIANT } });
     plugins.prepare();
 
     {
