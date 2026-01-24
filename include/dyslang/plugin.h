@@ -11,8 +11,8 @@ namespace dyslang
 {
 	struct IProperties;
     struct Properties;
-    struct Plugin;
-    template <typename T> struct Object;
+    struct CompPlugin;
+    template <typename T> struct CompObject;
     struct ObjectData;
 
     class SlangBinaryBlob : public ISlangBlob
@@ -32,13 +32,13 @@ namespace dyslang
 		size_t _len;
     };
 
-    struct Plugin
+    struct CompPlugin
     {
-        explicit Plugin(std::string_view lib_path);
+        explicit CompPlugin(std::string_view lib_path);
 
         template <typename T = void>
-        std::unique_ptr<Object<T>> create(Properties& props, const char* variant) {
-            auto obj = std::make_unique<Object<T>>(*this, variant);
+        std::unique_ptr<CompObject<T>> create(Properties& props, const char* variant) {
+            auto obj = std::make_unique<CompObject<T>>(*this, variant);
             f_create_object(&props, variant, obj->data.get_data_ptr());
             obj->interface_name = f_interface_variant_name(variant);
             obj->implementation_name = f_implementation_variant_name(variant);
@@ -90,7 +90,7 @@ namespace dyslang
         std::vector<uint8_t> data;
     };
 
-    struct Object2
+    struct Object
     {
         std::string implementation_name;
         std::string interface_name;
@@ -101,7 +101,7 @@ namespace dyslang
     {
         std::string _source, _name;
     };
-    struct Plugin2
+    struct Plugin
     {
         std::string _source, _name;
         std::vector<Implementation> implementations;
@@ -116,13 +116,13 @@ namespace dyslang
         void prepare();
         void compose();
 
-        Object2 create(const std::string& implementation_name, const std::string& interface_name, dyslang::Properties& props) const
+        Object create(const std::string& implementation_name, const std::string& interface_name, dyslang::Properties& props) const
 		{
-            Object2 o = { implementation_name, interface_name, ObjectData(f_size_of(interface_name.c_str()) - ObjectData::rtti_header_size)};
+            Object o = { implementation_name, interface_name, ObjectData(f_size_of(interface_name.c_str()) - ObjectData::rtti_header_size)};
 			f_create((IProperties*)&props, implementation_name.c_str(), o.data.data.data());
             return o;
 		}
-        void traverse(Object2& object, Properties& props) const
+        void traverse(Object& object, Properties& props) const
         {
 			f_traverse((IProperties*)&props, object.implementation_name.c_str(), object.data.data.data());
         }
@@ -131,14 +131,14 @@ namespace dyslang
         std::function<void(IProperties*, const char*, void*)> f_traverse;
         std::function<size_t(const char*)> f_size_of;
 
-        std::unordered_map<std::string, Plugin2> interfaces;
+        std::unordered_map<std::string, Plugin> interfaces;
     };
 
     template <typename T>
-    struct Object
+    struct CompObject
     {
-        explicit Object(
-            Plugin& plugin,
+        explicit CompObject(
+            CompPlugin& plugin,
             const char* variant) : plugin{ plugin }, variant{ variant }, data(plugin.f_variant_size(variant)) {}
 
         //T* get() { return reinterpret_cast<T*>(data.data()); }
@@ -152,7 +152,7 @@ namespace dyslang
             return "Object:\n Interface: " + interface_name + "\n Implementation: " + implementation_name + "\n Variant: " + variant + "\n Conformance ID: " + std::to_string(data.get_type_conformance_id()) + "\n RTTI Header Size: " + std::to_string(data.rtti_header_size) + " Bytes\n Data Size: " + std::to_string(data.get_data_size()) + " Bytes\n Total Size: " + std::to_string(data.get_size()) + " Bytes\n";
         }
 
-        Plugin& plugin;
+        CompPlugin& plugin;
         const char* variant;
         std::string interface_name;
         std::string implementation_name;

@@ -6,7 +6,7 @@
 
 #include <dyslang/dyslang.h>
 
-dyslang::Plugin::Plugin(const std::string_view lib_path) : lib{ dyslang::platform::SharedLib::open(lib_path.data()) }
+dyslang::CompPlugin::CompPlugin(const std::string_view lib_path) : lib{ dyslang::platform::SharedLib::open(lib_path.data()) }
 {
     if (!lib.valid()) {
         throw std::runtime_error("Failed to load plugin");
@@ -46,28 +46,28 @@ dyslang::Plugin::Plugin(const std::string_view lib_path) : lib{ dyslang::platfor
 	slang_module = SlangBinaryBlob{ f_slang_module_ir_data_ptr(), f_slang_module_ir_size() };
 }
 
-std::string dyslang::Plugin::interface_variant_name(const char* variant) const
+std::string dyslang::CompPlugin::interface_variant_name(const char* variant) const
 {
     return f_interface_variant_name(variant);
 }
 
-std::string dyslang::Plugin::implementation_variant_name(const char* variant) const
+std::string dyslang::CompPlugin::implementation_variant_name(const char* variant) const
 {
     return f_implementation_variant_name(variant);
 }
 
-std::string dyslang::Plugin::to_string() const {
+std::string dyslang::CompPlugin::to_string() const {
     return "Plugin:\n Interface: " + interface_name + "\n Implementation: " + implementation_name + "\n Variants: " + available_variants + "\n";
 }
 
-const dyslang::SlangBinaryBlob* dyslang::Plugin::slang_module_blob() const
+const dyslang::SlangBinaryBlob* dyslang::CompPlugin::slang_module_blob() const
 {
     return &slang_module;
 }
 
 // ----------
 
-void dyslang::Plugin2::add_implementation(const std::string& source, const std::string& name)
+void dyslang::Plugin::add_implementation(const std::string& source, const std::string& name)
 {
     implementations.emplace_back(source, name);
 }
@@ -79,7 +79,7 @@ void dyslang::Plugins::compose()
 
 void dyslang::Plugins::add_interface(const std::string& source, const std::string& name)
 {
-	interfaces[name] = Plugin2{._source = source, ._name = name, .implementations = std::vector<Implementation>() };
+	interfaces[name] = Plugin{._source = source, ._name = name, .implementations = std::vector<Implementation>() };
 }
 
 namespace

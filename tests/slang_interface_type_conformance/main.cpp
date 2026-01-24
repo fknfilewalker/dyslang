@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
     slangc.add_type_conformance("IFoo", "Impl2");
     dyslang::Slangc::Hash hash;
     slangc = slangc.compose().hash(0, hash);
-    std::vector<uint8_t> output = slangc.glsl();
+    std::vector<uint32_t> output = slangc.spv();
 
     for (auto& o : output) {
         std::cout << o;

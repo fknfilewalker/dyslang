@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
     const uint32_t conformance_id = 420;
 
     // load plugin
-    dyslang::Plugin plugin{ (path / "plugins/point").string() };
+    dyslang::CompPlugin plugin{ (path / "plugins/point").string() };
     std::cout << plugin.to_string() << '\n';
 
     auto a = dyslang::detail::get_dims_v<double>; // 0 0 0
@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 	auto d = dyslang::detail::get_stride_v<dyslang::DynamicArray<double>>;
     auto dd = dyslang::detail::get_stride_v<dyslang::DynamicArray<std::array<double, 3>>>;
 	using DyT = dyslang::detail::get_type_t<dyslang::DynamicArray<std::array<double, 3>>>;
-    using RanT = dyslang::detail::get_type_t<dyslang::Plugin>;
+    using RanT = dyslang::detail::get_type_t<dyslang::CompPlugin>;
 
     // set properties
 	auto id = 777;
@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
     std::cout << "IN:" << props_in.to_string() << '\n';
 
     // create object
-    std::unique_ptr<dyslang::Object<void>> light = plugin.create<void>(props_in, variant);
+    std::unique_ptr<dyslang::CompObject<void>> light = plugin.create<void>(props_in, variant);
     light->data.set_type_conformance_id(conformance_id);
     std::cout << light->to_string() << '\n';
 

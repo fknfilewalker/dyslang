@@ -13,8 +13,8 @@ int main(int argc, char* argv[]) {
     using Real = float;
 
     // load plugin
-    dyslang::Plugin point_plugin{ (path / "plugins/point").string() };
-    dyslang::Plugin spot_plugin{ (path / "plugins/spot").string() };
+    dyslang::CompPlugin point_plugin{ (path / "plugins/point").string() };
+    dyslang::CompPlugin spot_plugin{ (path / "plugins/spot").string() };
     std::cout << point_plugin.to_string() << '\n';
     std::cout << spot_plugin.to_string() << '\n';
 
@@ -39,8 +39,8 @@ int main(int argc, char* argv[]) {
     std::cout << "IN:" << props_in.to_string() << '\n';
 
     // create object
-    std::unique_ptr<dyslang::Object<void>> point_light = point_plugin.create<void>(props_in, variant);
-    std::unique_ptr<dyslang::Object<void>> spot_light = spot_plugin.create<void>(props_in, variant);
+    std::unique_ptr<dyslang::CompObject<void>> point_light = point_plugin.create<void>(props_in, variant);
+    std::unique_ptr<dyslang::CompObject<void>> spot_light = spot_plugin.create<void>(props_in, variant);
     std::cout << point_light->to_string() << '\n';
 
     // read back obj data
