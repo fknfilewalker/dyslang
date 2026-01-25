@@ -24,10 +24,11 @@ int main(int argc, char* argv[]) {
     auto position = std::array<Real, 3>{ 10.0f, 17.0f, 13.0f };
     auto color = std::array<Real, 3>{ 3.0f, 4.0, 1000 };
     auto intensity = static_cast<Real>(15.0f);
-    auto transform = dyslang::matrix<Real, 3, 3>{
+    auto transform = dyslang::matrix<Real, 4, 3>{
         1.0f, 2.0f, 3.0f,
         4.0f, 5.0f, 6.0f,
-        7.0f, 8.0f, 9.0f
+        7.0f, 8.0f, 9.0f,
+        10.0f, 11.0f, 12.0f
     };
 
     props_in.set("id", id);

@@ -258,8 +258,8 @@ namespace dyslang {
 	typealias b32 = uint32_t;
 	typealias CString = NativeString;
 
-    __generic<typename T>
-	public struct DynamicArray {
+	public struct DynamicArray<T> {
+        typedef T Element;
         public T* data;
         public uint64_t count;
     };
@@ -298,7 +298,8 @@ namespace dyslang
 
     // todo: use DescriptorHandle directly
     #ifdef __SLANG__
-    public struct _DescriptorHandle<T:IOpaqueDescriptor> {
+    public struct _DescriptorHandle<T : IOpaqueDescriptor> {
+        typedef vector<uint32_t, 2> Type;
         public vector<uint32_t, 2> id;
         public DescriptorHandle<T> get() {
             return {id};
@@ -324,12 +325,20 @@ namespace __private {
 
                 template <typename T> struct is_vector : std::false_type {};
                 template <typename T, size_t N> struct is_vector<Vector<T, N>> : std::true_type {};
+                template <typename T> struct is_matrix : std::false_type {};
+                template <typename T, size_t R, size_t C> struct is_matrix<Matrix<T, R, C>> : std::true_type {};
                 
                 template <typename T> struct vector_info {
-                    using type = void;
+                    using type = T;
 					static constexpr size_t rows = 0;
 					static constexpr size_t cols = 0;
                     static constexpr size_t size = 0;
+                };
+                template <typename T, size_t N> struct vector_info<FixedArray<T, N>> {
+                    using type = T;
+					static constexpr size_t rows = N;
+					static constexpr size_t cols = 0;
+                    static constexpr size_t size = N;
                 };
                 template <typename T, size_t N> struct vector_info<Vector<T, N>> {
                     using type = T;
@@ -429,57 +438,19 @@ namespace __private {
         __intrinsic_asm R"(getProperty($0, CompileTimeInit<$TR>::get(), $1))";
     }
 
+    // slang templates do not map to explicit function types
     [require(cpp)]
-    void set<T>(dyslang::CString key, T value, dyslang::IProperties properties) {
-        __requirePrelude(R"(
-			template <typename T, typename PROPERTIES_T> 
-            void setProperty(const char* key, T* value, PROPERTIES_T& props){
-				using Type = std::remove_cv_t<std::remove_reference_t<T>>;
-                if constexpr (is_arithmetic_v<Type>) {
-                    std::array<size_t, 3> dims = { 0, 0, 0 };
-                    std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
-                    props->set(key, value, dims.data(), stride_in_bytes.data(), sizeof(T), 0);
-                } 
-				else if constexpr (std::is_pointer_v<T>) { // Pointer
-					std::array<size_t, 3> dims = { 0, 0, 0 };
-                    std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
-                    props->set(key, (void*)*value, dims.data(), stride_in_bytes.data(), sizeof(std::remove_pointer_t<T>), 3);
-				}
-                else if constexpr (sizeof(T) == 8) { // DescriptorHandle
-                    std::array<size_t, 3> dims = { 2, 0, 0 };
-                    std::array<int64_t, 3> stride_in_bytes = { sizeof(uint32_t), 0, 0 };
-                    uint32_t* ptr = (uint32_t*)value;
-                    props->set(key, ptr, dims.data(), stride_in_bytes.data(), sizeof(T), 2);
-				}
-				else if constexpr (sizeof(T) == 16) { // DynamicArray
-                    using da_t = std::remove_pointer_t<decltype(value->data_0)>;
-                    using value_t = vector_info<da_t>::type;
-                    value_t* ptr = (value_t*)value->data_0;
-                    std::array<size_t, 3> dims = { value->count_0, vector_info<da_t>::rows, vector_info<da_t>::cols };
-                    std::array<int64_t, 3> stride_in_bytes = { sizeof(value_t), 0, 0 };
-                    props->set(key, ptr, dims.data(), stride_in_bytes.data(), value->count_0 * sizeof(da_t), 1);
-				}
-            }
-			template <typename T, int N, typename PROPERTIES_T>
-            void setProperty(const char* key, Vector<T, N>* value, PROPERTIES_T& props){
-				std::array<size_t, 3> dims = { N, 0, 0 };
-				std::array<int64_t, 3> stride_in_bytes = { sizeof(T), 0, 0 };
-                props->set(key, (T*)value, dims.data(), stride_in_bytes.data(), sizeof(Vector<T, N>), 0);
-            }
-            template <typename T, size_t N, typename PROPERTIES_T> 
-            void setProperty(const char* key, FixedArray<T, N>* value, PROPERTIES_T& props){
-                std::array<size_t, 3> dims = { N, 0, 0 };
-				std::array<int64_t, 3> stride_in_bytes = { sizeof(T), 0, 0 };
-                props->set(key, (T*)value, dims.data(), stride_in_bytes.data(), sizeof(FixedArray<T, N>), 0);
-            }
-			template <typename T, int ROWS, int COLS, typename PROPERTIES_T> 
-            void setProperty(const char* key, Matrix<T, ROWS, COLS>* value, PROPERTIES_T& props){
-				std::array<size_t, 3> dims = { ROWS, COLS, 0 };
-				std::array<int64_t, 3> stride_in_bytes = { COLS * sizeof(T), sizeof(T), 0 };
-                props->set(key, (T*)value, dims.data(), stride_in_bytes.data(), sizeof(Matrix<T, ROWS, COLS>), 0);
-            }
-        )");
-        __intrinsic_asm R"(setProperty($0, $1, $2))";
+    void set<T>(dyslang::CString key, T *ptr, size_t *dims /*3*/, int64_t *stride_in_bytes /*3*/, uint64_t total_size_in_bytes, uint64_t type, dyslang::IProperties properties) {
+        __intrinsic_asm R"($6->set($0, (vector_info<std::remove_pointer_t<$T1>>::type*)$1, $2, $3, $4, $5))";
+    }
+
+    [require(cpp)]
+    Tuple<vector<size_t, 3>, vector<int64_t, 3>> info<T>(T value) {
+        __intrinsic_asm R"(
+        $TR{ 
+            Vector<size_t, 3>(vector_info<$T0>::rows, vector_info<$T0>::cols, 0 ), 
+            is_matrix<$T0>::value ? Vector<int64_t, 3>( vector_info<$T0>::cols * sizeof(vector_info<$T0>::type), sizeof(vector_info<$T0>::type), 0 ) : Vector<int64_t, 3>( sizeof(vector_info<$T0>::type), 0, 0 ) 
+        })";
     }
 }
 
@@ -488,8 +459,8 @@ public struct Properties {
     __init(dyslang::IProperties properties){
         __properties = properties;
     }
-    public bool has(dyslang::CString key) {
 
+    public bool has(dyslang::CString key) {
         __target_switch
         {
         case cpp: 
@@ -509,11 +480,51 @@ public struct Properties {
         }
     }
 
-    public void set<T>(dyslang::CString key, T value) {
+    public void set<T>(dyslang::CString key, T* value)
+    {
         __target_switch
         {
-        case cpp: 
-            __private::set<T>(key, value, __properties);
+        case cpp:
+            // printf("Set Arithmetic: %s\n", key);
+            var i = __private::info<T>({});
+            __private::set<T>(key, value, &i._0[0], &i._1[0], uint64_t(sizeof(T)), uint64_t(0), __properties);
+        }
+    }
+
+    public void set<T>(dyslang::CString key, T** value)
+    {
+        __target_switch
+        {
+        case cpp:
+            // printf("Set Pointer: %s\n", key);
+            var i = __private::info<T>( {});
+            __private::set<T*>(key, value, &i._0[0], &i._1[0], uint64_t(sizeof(T)), uint64_t(3), __properties);
+        }
+    }
+
+    public void set<T : IOpaqueDescriptor>(dyslang::CString key, dyslang::_DescriptorHandle<T>* value)
+    {
+        __target_switch
+        {
+        case cpp:
+            // printf("Set _DescriptorHandle: %s\n", key);
+            var i = __private::info<value.Type>({});
+            __private::set<value.Type>(key, (value.Type*)&value.id, &i._0[0], &i._1[0], uint64_t(sizeof(T)), uint64_t(2), __properties);
+        }
+    }
+
+    public void set<T : IArithmetic>(dyslang::CString key, dyslang::DynamicArray<T>* value)
+    {
+        __target_switch
+        {
+        case cpp:
+            // printf("Set DynamicArray: %s\n", key);
+            var i = __private::info<value.Element>({});
+            i._0 = i._0.zxy;
+            i._0[0] = size_t(value.count);
+            i._1 = i._1.zxy;
+            i._1[0] = sizeof(T);
+            __private::set<value.Element>(key, value->data, &i._0[0], &i._1[0], uint64_t(value.count *sizeof(T)), uint64_t(1), __properties);
         }
     }
 };
@@ -707,6 +718,7 @@ public struct Properties {
 					}
                     if constexpr (std::is_same_v<decltype(ptr), void*>) {
                         result += "void*";
+                        result += " (total size: " + std::to_string(value.total_size_in_bytes) + " bytes)";
                     }
                     else {
                         if (value.dimension[0] == 0 && value.dimension[1] == 0 && value.dimension[2] == 0)
@@ -737,6 +749,11 @@ public struct Properties {
                                 if (value.dimension[1]) result += "]";
                             }
                             if (value.dimension[2]) result += "]";
+
+                            result += " (dims: " + std::to_string(value.dimension[0]) + ", " +
+                                      std::to_string(value.dimension[1]) + ", " + std::to_string(value.dimension[2]) + ")";
+                            result += " (stride: " + std::to_string(value.stride_in_bytes[0]) + ", " +
+                                      std::to_string(value.stride_in_bytes[1]) + ", " + std::to_string(value.stride_in_bytes[2]) + ")";
                         }
                     }
 	            }, value.ptr);

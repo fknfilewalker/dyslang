@@ -45,10 +45,11 @@ int main(int argc, char* argv[]) {
 	auto position = std::array<Real, 3>{ 10.0f, 17.0f, 13.0f };
 	auto color = std::array<Real, 3>{ 3.0f, 4.0, 1000 };
 	auto intensity = static_cast<Real>(15.0f);
-    auto transform = dyslang::matrix<Real, 3, 3>{
+    auto transform = dyslang::matrix<Real, 4, 3>{
         1.0f, 2.0f, 3.0f,
         4.0f, 5.0f, 6.0f,
-        7.0f, 8.0f, 9.0f
+        7.0f, 8.0f, 9.0f,
+        10.0f, 11.0f, 12.0f
 	};
     auto dynamic_transform = dyslang::DynamicArray{ &transform, 1 };
     auto texture = dyslang::DescriptorHandle{ 1, 2 };
@@ -65,7 +66,7 @@ int main(int argc, char* argv[]) {
 	auto& t = props_in.get<dyslang::DescriptorHandle>("texture");
     auto& g = props_in.get<std::array<Real, 3>>("color");
     g[0] = 11199;
-    auto dynamic_transform_back = props_in.get<dyslang::DynamicArray<dyslang::matrix<Real, 3, 3>>>("dynamic_transform");
+    auto dynamic_transform_back = props_in.get<dyslang::DynamicArray<dyslang::matrix<Real, 4, 3>>>("dynamic_transform");
     std::cout << "IN:" << props_in.to_string() << '\n';
 
     // create object
@@ -101,10 +102,10 @@ int main(int argc, char* argv[]) {
     slangc = slangc.compose().hash(0, hash);
     auto output = slangc.spv();
 
-    for (const auto& o : output) {
-        std::cout << o;
-    }
-    std::cout << '\n';
+    //for (const auto& o : output) {
+    //    std::cout << o;
+    //}
+    //std::cout << '\n';
 
 	return 0;
 }
