@@ -754,6 +754,7 @@ public struct Properties {
                                       std::to_string(value.dimension[1]) + ", " + std::to_string(value.dimension[2]) + ")";
                             result += " (stride: " + std::to_string(value.stride_in_bytes[0]) + ", " +
                                       std::to_string(value.stride_in_bytes[1]) + ", " + std::to_string(value.stride_in_bytes[2]) + ")";
+                            result += " (total size: " + std::to_string(value.total_size_in_bytes) + " bytes)";
                         }
                     }
 	            }, value.ptr);
