@@ -471,7 +471,7 @@ public struct Properties {
         }
     }
 
-    public void set<T : IArithmetic>(NativeString key, T* value)
+    public void set<T>(NativeString key, T* value)
     {
         __target_switch
         {

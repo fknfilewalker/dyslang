@@ -291,7 +291,7 @@ internal struct Properties : dyslang::IProperties {
             return {};
         }
 	}
-    internal void set<T : IArithmetic>(NativeString key, T* value)
+    internal void set<T>(NativeString key, T* value)
     {
         __target_switch
         {
