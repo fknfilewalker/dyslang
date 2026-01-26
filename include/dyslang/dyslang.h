@@ -313,119 +313,122 @@ namespace dyslang
 
 #ifdef __SLANG__
 namespace __private {
+    void prelude(){
+        __requirePrelude(R"(
+            #include <type_traits>
+            #include <stdexcept>
+            #include <iostream>
+            #include <array>
+            #include <cstdio>
+
+            template <typename T> struct is_vector : std::false_type {};
+            template <typename T, size_t N> struct is_vector<Vector<T, N>> : std::true_type {};
+            template <typename T> struct is_matrix : std::false_type {};
+            template <typename T, size_t R, size_t C> struct is_matrix<Matrix<T, R, C>> : std::true_type {};
+            
+            template <typename T> struct vector_info {
+                using type = T;
+                static constexpr size_t rows = 0, cols = 0, size = 0;
+            };
+            template <typename T, size_t N> struct vector_info<FixedArray<T, N>> {
+                using type = T;
+                static constexpr size_t rows = N, cols = 0, size = N;
+            };
+            template <typename T, size_t N> struct vector_info<Vector<T, N>> {
+                using type = T;
+                static constexpr size_t rows = N, cols = 0, size = N;
+            };
+            template <typename T, size_t R, size_t C> struct vector_info<Matrix<T, R, C>> {
+                using type = T;
+                static constexpr size_t rows = R, cols = C, size = R * C;
+            };
+
+            template <typename T> inline constexpr bool is_arithmetic_v = std::is_floating_point_v<T> || std::is_integral_v<T>;
+            struct DynamicArrayHelper { void* ptr; uint64_t count; };
+        )");
+    }
+
     [require(cpp)]
     T get<T>(NativeString key, dyslang::IProperties properties) {
         __requirePrelude(R"(
-                #include <type_traits>
-                #include <stdexcept>
-				#include <iostream>
-				#include <array>
-				#include <cstdio>
-
-                template <typename T> struct is_vector : std::false_type {};
-                template <typename T, size_t N> struct is_vector<Vector<T, N>> : std::true_type {};
-                template <typename T> struct is_matrix : std::false_type {};
-                template <typename T, size_t R, size_t C> struct is_matrix<Matrix<T, R, C>> : std::true_type {};
+            template <typename T, typename PROPERTIES_T> 
+            T getProperty(const char* key, T dummy, PROPERTIES_T props)// require(is_arithmetic_v<std::remove_cv_t<std::remove_reference_t<T>>>)
+            {
+                if constexpr (is_arithmetic_v<std::remove_cv_t<std::remove_reference_t<T>>>) {
+                    T* value;
+                    std::array<size_t, 3> dims = { 0, 0, 0 };
+                    std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
+                    props->get(key, &value, dims.data(), stride_in_bytes.data());
+                    if (dims[0] != 0) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
+                    return *value;
+                } 
+                else if constexpr (std::is_pointer_v<T>) {
+                    void* value;
+                    std::array<size_t, 3> dims = { 0, 0, 0 };
+                    std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
+                    props->get(key, &value, dims.data(), stride_in_bytes.data());
+                    return (T)value;
+                } 
+                else if constexpr (sizeof(T) == 8) { // DescriptorHandle
+                    uint32_t* value;
+                    std::array<size_t, 3> dims = { 0, 0, 0 };
+                    std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
+                    props->get(key, &value, dims.data(), stride_in_bytes.data());
+                    return *(T*)value;
+                } 
+                else if constexpr (sizeof(T) == 16) { // DynamicArray
+                    using da_t = std::remove_pointer_t<decltype(dummy.data_0)>;
+                    using value_t = vector_info<da_t>::type;
+                    value_t* value;
+                    std::array<size_t, 3> dims = { 0, 0, 0 };
+                    std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
+                    props->get(key, &value, dims.data(), stride_in_bytes.data());
+                    DynamicArrayHelper result = { value, dims[0] };
+                    return *reinterpret_cast<T*>(&result);
+                }
+                return T();
+            }
                 
-                template <typename T> struct vector_info {
-                    using type = T;
-					static constexpr size_t rows = 0, cols = 0, size = 0;
-                };
-                template <typename T, size_t N> struct vector_info<FixedArray<T, N>> {
-                    using type = T;
-					static constexpr size_t rows = N, cols = 0, size = N;
-                };
-                template <typename T, size_t N> struct vector_info<Vector<T, N>> {
-                    using type = T;
-					static constexpr size_t rows = N, cols = 0, size = N;
-                };
-                template <typename T, size_t R, size_t C> struct vector_info<Matrix<T, R, C>> {
-                    using type = T;
-					static constexpr size_t rows = R, cols = C, size = R * C;
-                };
+            template <typename T, int N, typename PROPERTIES_T> 
+            Vector<T, N> getProperty(const char* key, Vector<T, N> dummy, PROPERTIES_T props){	
+                Vector<T, N>* value;
+                std::array<size_t, 3> dims = { 0, 0, 0 };
+                std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
+                props->get(key, (T**)&value, dims.data(), stride_in_bytes.data());
+                if (dims[0] != N) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
+                return *value;
+            }
+            template <typename T, size_t N, typename PROPERTIES_T> 
+            FixedArray<T, N> getProperty(const char* key, FixedArray<T, N> dummy, PROPERTIES_T& props){	
+                FixedArray<T, N>* value;
+                std::array<size_t, 3> dims = { 0, 0, 0 };
+                std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
+                props->get(key, (T**)&value, dims.data(), stride_in_bytes.data());
+                if (dims[0] != N) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
+                return *value;
+            }
+            template <typename T, int ROWS, int COLS, typename PROPERTIES_T> 
+            Matrix<T, ROWS, COLS> getProperty(const char* key, Matrix<T, ROWS, COLS> dummy, PROPERTIES_T& props){	
+                Matrix<T, ROWS, COLS>* value;
+                std::array<size_t, 3> dims = { 0, 0, 0 };
+                std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
+                props->get(key, (T**)&value, dims.data(), stride_in_bytes.data());
+                if (dims[0] != ROWS || dims[1] != COLS) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
+                return *value;
+            }
 
-                template <typename T> inline constexpr bool is_arithmetic_v = std::is_floating_point_v<T> || std::is_integral_v<T>;
-
-				struct DynamicArrayHelper { void* ptr; uint64_t count; };
-				
-				template <typename T, typename PROPERTIES_T> 
-                T getProperty(const char* key, T dummy, PROPERTIES_T props)// require(is_arithmetic_v<std::remove_cv_t<std::remove_reference_t<T>>>)
-				{
-					if constexpr (is_arithmetic_v<std::remove_cv_t<std::remove_reference_t<T>>>) {
-						T* value;
-						std::array<size_t, 3> dims = { 0, 0, 0 };
-						std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
-						props->get(key, &value, dims.data(), stride_in_bytes.data());
-	                    if (dims[0] != 0) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
-	                    return *value;
-					} 
-					else if constexpr (std::is_pointer_v<T>) {
-						void* value;
-						std::array<size_t, 3> dims = { 0, 0, 0 };
-						std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
-						props->get(key, &value, dims.data(), stride_in_bytes.data());
-	                    return (T)value;
-					} 
-                    else if constexpr (sizeof(T) == 8) { // DescriptorHandle
-						uint32_t* value;
-						std::array<size_t, 3> dims = { 0, 0, 0 };
-						std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
-						props->get(key, &value, dims.data(), stride_in_bytes.data());
-	                    return *(T*)value;
-					} 
-					else if constexpr (sizeof(T) == 16) { // DynamicArray
-						using da_t = std::remove_pointer_t<decltype(dummy.data_0)>;
-                        using value_t = vector_info<da_t>::type;
-						value_t* value;
-						std::array<size_t, 3> dims = { 0, 0, 0 };
-						std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
-						props->get(key, &value, dims.data(), stride_in_bytes.data());
-						DynamicArrayHelper result = { value, dims[0] };
-                        return *reinterpret_cast<T*>(&result);
-                    }
-					return T();
-                }
-                 
-				template <typename T, int N, typename PROPERTIES_T> 
-                Vector<T, N> getProperty(const char* key, Vector<T, N> dummy, PROPERTIES_T props){	
-					Vector<T, N>* value;
-                    std::array<size_t, 3> dims = { 0, 0, 0 };
-					std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
-					props->get(key, (T**)&value, dims.data(), stride_in_bytes.data());
-                    if (dims[0] != N) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
-                    return *value;
-                }
-				template <typename T, size_t N, typename PROPERTIES_T> 
-                FixedArray<T, N> getProperty(const char* key, FixedArray<T, N> dummy, PROPERTIES_T& props){	
-					FixedArray<T, N>* value;
-                    std::array<size_t, 3> dims = { 0, 0, 0 };
-					std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
-					props->get(key, (T**)&value, dims.data(), stride_in_bytes.data());
-                    if (dims[0] != N) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
-                    return *value;
-                }
-				template <typename T, int ROWS, int COLS, typename PROPERTIES_T> 
-                Matrix<T, ROWS, COLS> getProperty(const char* key, Matrix<T, ROWS, COLS> dummy, PROPERTIES_T& props){	
-					Matrix<T, ROWS, COLS>* value;
-					std::array<size_t, 3> dims = { 0, 0, 0 };
-					std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
-					props->get(key, (T**)&value, dims.data(), stride_in_bytes.data());
-                    if (dims[0] != ROWS || dims[1] != COLS) std::cout << "Warning <dyslang>: \'" << key << "\' Property size mismatch" << std::endl;
-                    return *value;
-                }
-
-				template <typename T>
-				struct CompileTimeInit {
-				    static constexpr T value = T{};
-					static constexpr T get() { return value; }
-				};
-				template <typename T>
-				struct CompileTimeInit<T*> {
-				    static constexpr T storage = T{};
-					static constexpr const T* value = &storage;
-					static constexpr T* get() { return const_cast<T*>(value); }
-				};
-            )");
+            template <typename T>
+            struct CompileTimeInit {
+                static constexpr T value = T{};
+                static constexpr T get() { return value; }
+            };
+            template <typename T>
+            struct CompileTimeInit<T*> {
+                static constexpr T storage = T{};
+                static constexpr const T* value = &storage;
+                static constexpr T* get() { return const_cast<T*>(value); }
+            };
+        )");
         __intrinsic_asm R"(getProperty($0, CompileTimeInit<$TR>::get(), $1))";
     }
 
@@ -448,7 +451,9 @@ namespace __private {
 public struct Properties {
     private dyslang::IProperties __properties;
     __init(dyslang::IProperties properties){
+        __private::prelude();
         __properties = properties;
+        has("");
     }
 
     public bool has(NativeString key) {
