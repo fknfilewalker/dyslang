@@ -303,6 +303,43 @@ internal struct Properties : dyslang::IProperties {
             return;
         }
     }
+    
+    internal void set<T>(NativeString key, T** value)
+    {
+        __target_switch
+        {
+        case cpp:
+            // printf("Set Pointer: %s\n", key);
+            var i = __private::info<T>( {});
+            __private::set<T*>(key, value, &i._0[0], &i._1[0], uint64_t(sizeof(T)), uint64_t(3), __properties);
+        }
+    }
+
+    internal void set<T : IOpaqueDescriptor>(NativeString key, dyslang::_DescriptorHandle<T>* value)
+    {
+        __target_switch
+        {
+        case cpp:
+            // printf("Set _DescriptorHandle: %s\n", key);
+            var i = __private::info<value.Type>({});
+            __private::set<value.Type>(key, (value.Type*)&value.id, &i._0[0], &i._1[0], uint64_t(sizeof(T)), uint64_t(2), __properties);
+        }
+    }
+
+    internal void set<T : IArithmetic>(NativeString key, dyslang::DynamicArray<T>* value)
+    {
+        __target_switch
+        {
+        case cpp:
+            // printf("Set DynamicArray: %s\n", key);
+            var i = __private::info<value.Element>({});
+            i._0 = i._0.zxy;
+            i._0[0] = size_t(value.count);
+            i._1 = i._1.zxy;
+            i._1[0] = sizeof(T);
+            __private::set<value.Element>(key, value->data, &i._0[0], &i._1[0], uint64_t(value.count *sizeof(T)), uint64_t(1), __properties);
+        }
+    }
 };
 )tag";
 
