@@ -81,6 +81,8 @@ int main(int argc, char* argv[]) {
 
     auto c_o = light->data.find_address_offset(&props_out.get<decltype(color)>("color"));
     auto i_o = light->data.find_address_offset(&props_out.get<decltype(id)>("id"));
+    auto p_o = light->data.find_address_offset(&props_out.get<void*>("ptr"));
+    auto d_o = light->data.find_address_offset(&props_out.get<dyslang::DynamicArray<dyslang::matrix<Real, 4, 3>>>("dynamic_transform"));
     *reinterpret_cast<decltype(color)*>(&light->data.data[c_o]) = std::array<Real, 3>{ 1.0f, 2.0f, 3.0f };
     *reinterpret_cast<decltype(id)*>(&light->data.data[i_o]) = 555;
 

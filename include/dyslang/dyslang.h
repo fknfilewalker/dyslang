@@ -383,7 +383,9 @@ namespace __private {
                     std::array<size_t, 3> dims = { 0, 0, 0 };
                     std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
                     props->get(key, &value, dims.data(), stride_in_bytes.data());
-                    DynamicArrayHelper result = { value, dims[0] };
+
+					uintptr_t temp_int = *(uintptr_t*)value;
+                    DynamicArrayHelper result = { (void*)temp_int, dims[0] };
                     return *reinterpret_cast<T*>(&result);
                 }
                 return T();
@@ -520,7 +522,7 @@ public struct Properties {
             i._0[0] = size_t(value.count);
             i._1 = i._1.zxy;
             i._1[0] = sizeof(T);
-            __private::set<value.Element>(key, value->data, &i._0[0], &i._1[0], uint64_t(value.count *sizeof(T)), uint64_t(1), __properties);
+            __private::set<value.Element>(key, (value.Element*)&value.data, &i._0[0], &i._1[0], uint64_t(value.count *sizeof(T)), uint64_t(1), __properties);
         }
     }
 };
@@ -595,7 +597,7 @@ public struct Properties {
 	{
 	    using SupportedTypes = std::tuple<
             void*, int32_t*, uint32_t*, int64_t*, uint64_t*, float*, double*
-	    >;
+		>; // type 1 we store T**, for type 3 we store void**
 	    using VariantType = tuple_to_variant<SupportedTypes>::type;
 		struct Entry
 		{
@@ -669,7 +671,7 @@ public struct Properties {
             vector<int64_t, 3> stride_in_bytes = detail::get_stride_v<DynamicArray<T>>;
             dims[0] = data.size();
             stride_in_bytes[0] *= data.size();
-            set(key, (detail::get_type_t<T>*) data.data(), dims.data(), stride_in_bytes.data(), data.size() * sizeof(T), 1);
+            set(key, (detail::get_type_t<T>*) &data, dims.data(), stride_in_bytes.data(), data.size() * sizeof(T), 1);
         }
 
         template <typename T> T& get(const NativeString key)
@@ -685,7 +687,7 @@ public struct Properties {
             get(key, &ptr, dims.data(), stride_in_bytes.data());
             return *(T*)ptr;
         }
-        template <detail::IsDynamicArray T> T get(const NativeString key)
+        template <detail::IsDynamicArray T> T& get(const NativeString key)
         {
             vector<size_t, 3> dims;
             vector<int64_t, 3> stride_in_bytes;
@@ -696,7 +698,7 @@ public struct Properties {
             if (!std::holds_alternative<detail::get_type_t<T>*>(properties[key].ptr))
                 throw std::runtime_error("Property \'" + std::string(key) + "\' type mismatch.");
             get(key, &ptr, dims.data(), stride_in_bytes.data());
-            return { (typename detail::get_dynamic_array_type<T>::type*)ptr, dims[0] };
+            return *(T*)ptr;
         }
 
 	    [[nodiscard]] std::string to_string() const {
@@ -717,6 +719,10 @@ public struct Properties {
                         result += " (total size: " + std::to_string(value.total_size_in_bytes) + " bytes)";
                     }
                     else {
+                        if (value.type == 1) {
+                            uintptr_t temp_int = *(uintptr_t*)ptr;
+                            ptr = (decltype(ptr))temp_int;
+                        }
                         if (value.dimension[0] == 0 && value.dimension[1] == 0 && value.dimension[2] == 0)
                             result += std::to_string(ptr[0]);
                         else

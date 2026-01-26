@@ -206,7 +206,9 @@ namespace __private {
                         std::array<size_t, 3> dims = { 0, 0, 0 };
                         std::array<int64_t, 3> stride_in_bytes = { 0, 0, 0 };
                         props->get(key, &value, dims.data(), stride_in_bytes.data());
-                        DynamicArrayHelper result = { value, dims[0] };
+                        
+                        uintptr_t temp_int = *(uintptr_t*)value;
+                        DynamicArrayHelper result = { (void*)temp_int, dims[0] };
                         return *reinterpret_cast<T*>(&result);
                     }
                     return T();
@@ -337,7 +339,7 @@ internal struct Properties : dyslang::IProperties {
             i._0[0] = size_t(value.count);
             i._1 = i._1.zxy;
             i._1[0] = sizeof(T);
-            __private::set<value.Element>(key, value->data, &i._0[0], &i._1[0], uint64_t(value.count *sizeof(T)), uint64_t(1), __properties);
+            __private::set<value.Element>(key, (value.Element*)&value.data, &i._0[0], &i._1[0], uint64_t(value.count *sizeof(T)), uint64_t(1), __properties);
         }
     }
 };
