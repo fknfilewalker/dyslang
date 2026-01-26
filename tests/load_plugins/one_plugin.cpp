@@ -79,6 +79,14 @@ int main(int argc, char* argv[]) {
     light->traverse(props_out);
     std::cout << "OUT:" << props_out.to_string() << '\n';
 
+    auto c_o = light->data.find_address_offset(&props_out.get<decltype(color)>("color"));
+    auto i_o = light->data.find_address_offset(&props_out.get<decltype(id)>("id"));
+    *reinterpret_cast<decltype(color)*>(&light->data.data[c_o]) = std::array<Real, 3>{ 1.0f, 2.0f, 3.0f };
+    *reinterpret_cast<decltype(id)*>(&light->data.data[i_o]) = 555;
+
+    light->traverse(props_out);
+    std::cout << "OUT Modified:" << props_out.to_string() << '\n';
+
     std::cout << "Handle Device Resources:\n";
 	for (auto& [key, entry] : props_out.properties) {
         if (entry.type) {

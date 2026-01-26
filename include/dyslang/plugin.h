@@ -87,6 +87,13 @@ namespace dyslang
             *reinterpret_cast<uint32_t*>(data.data() + 2u * sizeof(uint32_t)) = id;
         }
         [[nodiscard]] uint32_t get_type_conformance_id() const { return *reinterpret_cast<const uint32_t*>(data.data() + 2u * sizeof(uint32_t)); }
+
+        size_t find_address_offset(const void* address) const {
+            auto ptr = static_cast<const uint8_t*>(address);
+            auto base = data.data();
+            if (ptr < base || ptr >= base + data.size()) return SIZE_MAX;
+            return static_cast<size_t>(ptr - base);
+        }
         std::vector<uint8_t> data;
     };
 
