@@ -247,16 +247,15 @@ namespace dyslang {
     // glsl/hlsl/slang bool is 32 bits
     // c++ bool is 8 bits
     using b32 = uint32_t;
-    using CString = const char*;
     using size_t = std::size_t;
-
+    using NativeString = const char*;
+    
     template<typename T> using DynamicArray = std::span<T>;
 }
 #else
 namespace dyslang {
     typealias arithmetic = __BuiltinArithmeticType;
 	typealias b32 = uint32_t;
-	typealias CString = NativeString;
 
 	public struct DynamicArray<T> {
         typedef T Element;
@@ -273,9 +272,9 @@ namespace dyslang
         IProperties,
         UUID(A,2,F,5,4,8,6,6, 7,A,E,F, 4,9,0,5, B,4,C,E, 4,7, A,C, 7,3, C,A, 3,C, 0,7)
     )
-        vbegin(dyslang::b32) has(const dyslang::CString) vend;
+        vbegin(dyslang::b32) has(const NativeString) vend;
 
-#define dyslang_properties_get(TYPE) vbegin(uint64_t) get(const dyslang::CString, TYPE**, size_t* dims /*3*/, int64_t* stride_in_bytes /*3*/) vend;
+#define dyslang_properties_get(TYPE) vbegin(uint64_t) get(const NativeString, TYPE**, size_t* dims /*3*/, int64_t* stride_in_bytes /*3*/) vend;
 	    dyslang_properties_get(void)
 		dyslang_properties_get(int32_t)
         dyslang_properties_get(uint32_t)
@@ -285,7 +284,7 @@ namespace dyslang
         dyslang_properties_get(double)
 #undef dyslang_properties_get
 
-#define dyslang_properties_set(TYPE) vbegin(void) set(const dyslang::CString key, TYPE* ptr, size_t* dims /*3*/, int64_t* stride_in_bytes /*3*/, uint64_t total_size_in_bytes, uint64_t type) vend;
+#define dyslang_properties_set(TYPE) vbegin(void) set(const NativeString key, TYPE* ptr, size_t* dims /*3*/, int64_t* stride_in_bytes /*3*/, uint64_t total_size_in_bytes, uint64_t type) vend;
 		dyslang_properties_set(void)
         dyslang_properties_set(int32_t)
         dyslang_properties_set(uint32_t)
@@ -315,7 +314,7 @@ namespace dyslang
 #ifdef __SLANG__
 namespace __private {
     [require(cpp)]
-    T get<T>(dyslang::CString key, dyslang::IProperties properties) {
+    T get<T>(NativeString key, dyslang::IProperties properties) {
         __requirePrelude(R"(
                 #include <type_traits>
                 #include <stdexcept>
@@ -330,27 +329,19 @@ namespace __private {
                 
                 template <typename T> struct vector_info {
                     using type = T;
-					static constexpr size_t rows = 0;
-					static constexpr size_t cols = 0;
-                    static constexpr size_t size = 0;
+					static constexpr size_t rows = 0, cols = 0, size = 0;
                 };
                 template <typename T, size_t N> struct vector_info<FixedArray<T, N>> {
                     using type = T;
-					static constexpr size_t rows = N;
-					static constexpr size_t cols = 0;
-                    static constexpr size_t size = N;
+					static constexpr size_t rows = N, cols = 0, size = N;
                 };
                 template <typename T, size_t N> struct vector_info<Vector<T, N>> {
                     using type = T;
-					static constexpr size_t rows = N;
-					static constexpr size_t cols = 0;
-                    static constexpr size_t size = N;
+					static constexpr size_t rows = N, cols = 0, size = N;
                 };
                 template <typename T, size_t R, size_t C> struct vector_info<Matrix<T, R, C>> {
                     using type = T;
-					static constexpr size_t rows = R;
-					static constexpr size_t cols = C;
-                    static constexpr size_t size = R * C;
+					static constexpr size_t rows = R, cols = C, size = R * C;
                 };
 
                 template <typename T> inline constexpr bool is_arithmetic_v = std::is_floating_point_v<T> || std::is_integral_v<T>;
@@ -440,7 +431,7 @@ namespace __private {
 
     // slang templates do not map to explicit function types
     [require(cpp)]
-    void set<T>(dyslang::CString key, T *ptr, size_t *dims /*3*/, int64_t *stride_in_bytes /*3*/, uint64_t total_size_in_bytes, uint64_t type, dyslang::IProperties properties) {
+    void set<T>(NativeString key, T *ptr, size_t *dims /*3*/, int64_t *stride_in_bytes /*3*/, uint64_t total_size_in_bytes, uint64_t type, dyslang::IProperties properties) {
         __intrinsic_asm R"($6->set($0, (vector_info<std::remove_pointer_t<$T1>>::type*)$1, $2, $3, $4, $5))";
     }
 
@@ -460,7 +451,7 @@ public struct Properties {
         __properties = properties;
     }
 
-    public bool has(dyslang::CString key) {
+    public bool has(NativeString key) {
         __target_switch
         {
         case cpp: 
@@ -470,7 +461,7 @@ public struct Properties {
         }
     }
 
-    public T get<T>(dyslang::CString key) {
+    public T get<T>(NativeString key) {
         __target_switch
         {
         case cpp: 
@@ -480,7 +471,7 @@ public struct Properties {
         }
     }
 
-    public void set<T>(dyslang::CString key, T* value)
+    public void set<T : IArithmetic>(NativeString key, T* value)
     {
         __target_switch
         {
@@ -491,7 +482,7 @@ public struct Properties {
         }
     }
 
-    public void set<T>(dyslang::CString key, T** value)
+    public void set<T>(NativeString key, T** value)
     {
         __target_switch
         {
@@ -502,7 +493,7 @@ public struct Properties {
         }
     }
 
-    public void set<T : IOpaqueDescriptor>(dyslang::CString key, dyslang::_DescriptorHandle<T>* value)
+    public void set<T : IOpaqueDescriptor>(NativeString key, dyslang::_DescriptorHandle<T>* value)
     {
         __target_switch
         {
@@ -513,7 +504,7 @@ public struct Properties {
         }
     }
 
-    public void set<T : IArithmetic>(dyslang::CString key, dyslang::DynamicArray<T>* value)
+    public void set<T : IArithmetic>(NativeString key, dyslang::DynamicArray<T>* value)
     {
         __target_switch
         {
@@ -624,10 +615,10 @@ public struct Properties {
 
 	    // Properties
 		virtual ~Properties() = default;
-		vbegin(dyslang::b32) has(const dyslang::CString key) SLANG_OVERRIDE { return properties.contains(key); }
+		vbegin(dyslang::b32) has(const NativeString key) SLANG_OVERRIDE { return properties.contains(key); }
 
 	#define dyslang_properties_get(TYPE) \
-	    vbegin(uint64_t) get(const dyslang::CString key, TYPE** ptr, size_t* dims, int64_t* stride_in_bytes) SLANG_OVERRIDE { \
+	    vbegin(uint64_t) get(const NativeString key, TYPE** ptr, size_t* dims, int64_t* stride_in_bytes) SLANG_OVERRIDE { \
 	        auto& entry = properties[key]; \
         	if (!std::holds_alternative<TYPE*>(entry.ptr)) \
 				std::cout << "Property \'" + std::string(key) + "\' type mismatch." << std::endl; \
@@ -645,7 +636,7 @@ public struct Properties {
 	    dyslang_properties_get(double)
 	#undef dyslang_properties_get
 
-	#define dyslang_properties_set(TYPE) vbegin(void) set(const dyslang::CString key, TYPE* ptr, size_t* dims, int64_t* stride_in_bytes, uint64_t total_size_in_bytes, uint64_t type) SLANG_OVERRIDE { properties[key] = Entry{ ptr, *(vector<size_t, 3>*)dims, *(vector<int64_t, 3>*)stride_in_bytes, total_size_in_bytes, type }; }
+	#define dyslang_properties_set(TYPE) vbegin(void) set(const NativeString key, TYPE* ptr, size_t* dims, int64_t* stride_in_bytes, uint64_t total_size_in_bytes, uint64_t type) SLANG_OVERRIDE { properties[key] = Entry{ ptr, *(vector<size_t, 3>*)dims, *(vector<int64_t, 3>*)stride_in_bytes, total_size_in_bytes, type }; }
 		dyslang_properties_set(void)
 		dyslang_properties_set(int32_t)
 	    dyslang_properties_set(uint32_t)
@@ -655,41 +646,41 @@ public struct Properties {
 	    dyslang_properties_set(double)
 	#undef dyslang_properties_set
 
-		template <typename T> void set(const dyslang::CString key, T& data)
+		template <typename T> void set(const NativeString key, T& data)
         {
             vector<size_t, 3> dims = detail::get_dims_v<T>;
             vector<int64_t, 3> stride_in_bytes = detail::get_stride_v<T>;
-            set(key, (detail::get_type_t<T>*)&data, dims.data(), stride_in_bytes.data(), sizeof(T), detail::parameter_type_traits<T>::value);
+            set(key, (detail::get_type_t<T>*) & data, dims.data(), stride_in_bytes.data(), sizeof(T), detail::parameter_type_traits<T>::value);
         }
-        template <typename T> void set(const dyslang::CString key, T* data)
+        template <typename T> void set(const NativeString key, T* data)
         {
             vector<size_t, 3> dims = detail::get_dims_v<T>;
             vector<int64_t, 3> stride_in_bytes = detail::get_stride_v<T>;
             set(key, (detail::get_type_t<T>*) & data, dims.data(), stride_in_bytes.data(), sizeof(T), 3);
         }
-        template <typename T> void set(const dyslang::CString key, DynamicArray<T>& data)
+        template <typename T> void set(const NativeString key, DynamicArray<T>& data)
         {
             vector<size_t, 3> dims = detail::get_dims_v<DynamicArray<T>>;
             vector<int64_t, 3> stride_in_bytes = detail::get_stride_v<DynamicArray<T>>;
-			dims[0] = data.size();
+            dims[0] = data.size();
             stride_in_bytes[0] *= data.size();
             set(key, (detail::get_type_t<T>*) data.data(), dims.data(), stride_in_bytes.data(), data.size() * sizeof(T), 1);
         }
 
-        template <typename T> T& get(const dyslang::CString key)
+        template <typename T> T& get(const NativeString key)
         {
             vector<size_t, 3> dims;
             vector<int64_t, 3> stride_in_bytes;
             detail::get_type_t<T>* ptr;
             // check if property is correct type
             if (!has(key))
-				throw std::runtime_error("Property \'" + std::string(key) + "\' does not exist.");
-			if (!std::holds_alternative<detail::get_type_t<T>*>(properties[key].ptr))
-				throw std::runtime_error("Property \'" + std::string(key) + "\' type mismatch.");
-			get(key, &ptr, dims.data(), stride_in_bytes.data());
+                throw std::runtime_error("Property \'" + std::string(key) + "\' does not exist.");
+            if (!std::holds_alternative<detail::get_type_t<T>*>(properties[key].ptr))
+                throw std::runtime_error("Property \'" + std::string(key) + "\' type mismatch.");
+            get(key, &ptr, dims.data(), stride_in_bytes.data());
             return *(T*)ptr;
         }
-        template <detail::IsDynamicArray T> T get(const dyslang::CString key)
+        template <detail::IsDynamicArray T> T get(const NativeString key)
         {
             vector<size_t, 3> dims;
             vector<int64_t, 3> stride_in_bytes;

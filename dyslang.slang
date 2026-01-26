@@ -17,6 +17,6 @@ namespace dyslang
     public interface IProperties {
         public bool has(NativeString key);
         public T get<T>(NativeString key);
-        public void set<T>(NativeString key, T value);
+        public void set<T : IArithmetic>(NativeString key, T* value);
     };
 }
