@@ -84,7 +84,15 @@ int main(int argc, char* argv[]) {
     auto p_o = light->data.find_address_offset(&props_out.get<void*>("ptr"));
     auto d_o = light->data.find_address_offset(&props_out.get<dyslang::DynamicArray<dyslang::matrix<Real, 4, 3>>>("dynamic_transform"));
     *reinterpret_cast<decltype(color)*>(&light->data.data[c_o]) = std::array<Real, 3>{ 1.0f, 2.0f, 3.0f };
-    *reinterpret_cast<decltype(id)*>(&light->data.data[i_o]) = 555;
+	light->data.write_data(i_o, 555, sizeof(int));
+
+    auto transform2 = dyslang::matrix<Real, 4, 3>{
+	    1.0f, 2.0f, 3.0f,
+	    4.0f, 225.0f, 6.0f,
+	    7.0f, 228.0f, 9.0f,
+	    10.0f, 11.0f, 12.0f
+    };
+	light->data.write_ptr_to(d_o, transform2);
 
     light->traverse(props_out);
     std::cout << "OUT Modified:" << props_out.to_string() << '\n';

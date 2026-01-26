@@ -94,6 +94,15 @@ namespace dyslang
             if (ptr < base || ptr >= base + data.size()) return SIZE_MAX;
             return static_cast<size_t>(ptr - base);
         }
+
+        void write_data(const size_t offset, const auto& src, const size_t size) {
+            std::memcpy(data.data() + offset, &src, size);
+		}
+		void write_ptr_to(const size_t offset, auto& d) {
+			void* ptr = &d;
+            std::memcpy(data.data() + offset, &ptr, sizeof(void*));
+        }
+
         std::vector<uint8_t> data;
     };
 
