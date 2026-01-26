@@ -92,7 +92,10 @@ int main(int argc, char* argv[]) {
     std::cout << "Handle Device Resources:\n";
 	for (auto& [key, entry] : props_out.properties) {
         if (entry.type) {
-            std::cout << "\t Create external device resource for entry:" << key << " with size: " << entry.total_size_in_bytes << " bytes.\n";
+            auto addr = std::visit([](auto* ptr) {
+                return static_cast<void*>(ptr);
+            }, entry.ptr);
+            std::cout << "\t Create external device resource for entry:" << key << " with offset: " << light->data.find_address_offset(addr) << " and size: " << entry.total_size_in_bytes << " bytes.\n";
         }
     }
     std::cout << "\n";
