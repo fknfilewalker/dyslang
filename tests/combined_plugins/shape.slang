@@ -2,7 +2,6 @@ module shape;
 import dyslang;
 
 [anyValueSize(64)]
-public interface IShape<Real : __BuiltinFloatingPointType> {
-    [require(cpp), mutating] public void traverse(dyslang::IProperties p);
+public interface IShape<Real : __BuiltinFloatingPointType> : dyslang::IConstructible {
     Real get_float();
 }

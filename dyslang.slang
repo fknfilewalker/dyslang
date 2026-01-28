@@ -25,5 +25,11 @@ namespace dyslang
         public void set<T : IArithmetic>(NativeString key, DynamicArray<T> *value);
         public IProperties get_scope(NativeString key);
         public IProperties set_scope(NativeString key);
+        __generic<T : IConstructible> public T *new();
+    };
+
+    public interface IConstructible {
+        [require(cpp)] public __init(dyslang::IProperties properties);
+        [require(cpp), mutating] public void traverse(dyslang::IProperties);
     };
 }

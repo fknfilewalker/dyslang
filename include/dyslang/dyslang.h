@@ -297,6 +297,7 @@ namespace dyslang
 
 		vbegin(Ref<IProperties>) _add_scope(NativeString) vend;
         vbegin(Ref<IProperties>) _get_scope(NativeString) vend;
+        vbegin(void*) _new(size_t bytes) vend;
 	};
 
     // todo: use DescriptorHandle directly
@@ -550,6 +551,17 @@ public struct Properties {
             return Properties();
         }
     }
+
+    __generic<typename T>
+    public T* new() {
+        __target_switch
+        {
+        case cpp:
+            return (T*)__properties._new(sizeof(T));
+        default:
+            return nullptr;
+        }
+    }
 };
 
 #elif __cplusplus
@@ -677,6 +689,11 @@ public struct Properties {
 	    dyslang_properties_set(float)
 	    dyslang_properties_set(double)
 	#undef dyslang_properties_set
+
+        void* _new(size_t bytes) SLANG_OVERRIDE
+        {
+            return malloc(bytes);
+		}
 
         Ref<IProperties> _add_scope(NativeString key) SLANG_OVERRIDE
         {

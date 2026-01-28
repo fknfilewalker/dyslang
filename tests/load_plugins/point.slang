@@ -34,6 +34,8 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
             intensity = properties.get<Real>("intensity");
         } else intensity = Real(1.0);
 
+        IEmitter<float> *p = properties.get_scope("brdf").new<IEmitter<float>>(); // leak for the purpose of science
+
         if (properties.has("transform")) {
             transform = properties.get<matrix<Real, 4, 3>>("transform");
         } else transform = matrix<Real, 4, 3>(1.0);

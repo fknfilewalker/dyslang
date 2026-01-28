@@ -139,6 +139,7 @@ namespace __private {
 #undef dyslang_properties_set
         Ref<IProperties> _add_scope(NativeString);
         Ref<IProperties> _get_scope(NativeString);
+        void* _new(size_t bytes);
     };
 
     void prelude(){
@@ -365,6 +366,19 @@ internal struct Properties : dyslang::IProperties {
         {
         case cpp:
             return Properties(__properties._add_scope(key));
+        }
+    }
+
+    __generic<T : dyslang::IConstructible>
+    internal T* new() {
+        __target_switch
+        {
+        case cpp:
+            var ptr = (T*)__properties._new(sizeof(T));
+            *ptr = T(this);
+            return ptr;
+        default:
+            return nullptr;
         }
     }
 };
