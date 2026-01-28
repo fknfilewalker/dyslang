@@ -23,5 +23,7 @@ namespace dyslang
         public void set<T>(NativeString key, T **value);
         public void set<T : IOpaqueDescriptor>(NativeString key, _DescriptorHandle<T> *value);
         public void set<T : IArithmetic>(NativeString key, DynamicArray<T> *value);
+        public IProperties get_scope(NativeString key);
+        public IProperties set_scope(NativeString key);
     };
 }

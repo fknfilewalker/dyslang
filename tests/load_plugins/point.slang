@@ -27,7 +27,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         } else range = Real(0.0);
 
         if (properties.has("color")) {
-            color = properties.get<vector<Real, 3>>("color");
+            color = properties.get_scope("brdf").get<vector<Real, 3>>("color2");
         } else color = vector<Real, 3>(1.0);
 
         if (properties.has("intensity")) {
@@ -59,6 +59,7 @@ struct PointLight<Real : __BuiltinFloatingPointType> : IEmitter<Real> {
         properties.set("position", &position);
         properties.set("range", &range);
         properties.set("color", &color);
+        properties.set_scope("brdf").set("color2", &color);
         properties.set("intensity", &intensity);
         properties.set("transform", &transform);
         properties.set("dynamic_transform", &dynamic_transform);

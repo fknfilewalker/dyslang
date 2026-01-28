@@ -251,6 +251,7 @@ namespace dyslang {
     using NativeString = const char*;
     
     template<typename T> using DynamicArray = std::span<T>;
+    template<typename T> using Ref = T**;
 }
 #else
 namespace dyslang {
@@ -293,6 +294,9 @@ namespace dyslang
         dyslang_properties_set(float)
         dyslang_properties_set(double)
 #undef dyslang_properties_set
+
+		vbegin(Ref<IProperties>) _add_scope(NativeString) vend;
+        vbegin(Ref<IProperties>) _get_scope(NativeString) vend;
 	};
 
     // todo: use DescriptorHandle directly
@@ -457,6 +461,7 @@ public struct Properties {
         __properties = properties;
         has("");
     }
+    __init() {}
 
     public bool has(NativeString key) {
         __target_switch
@@ -523,6 +528,26 @@ public struct Properties {
             i._1 = i._1.zxy;
             i._1[0] = sizeof(T);
             __private::set<value.Element>(key, (value.Element*)&value.data, &i._0[0], &i._1[0], uint64_t(value.count *sizeof(T)), uint64_t(1), __properties);
+        }
+    }
+
+    public Properties get_scope(NativeString key) {
+        __target_switch
+        {
+        case cpp:
+            return Properties(__properties._get_scope(key));
+        default:
+            return Properties();
+        }
+    }
+
+    public Properties set_scope(NativeString key) {
+        __target_switch
+        {
+        case cpp:
+            return Properties(__properties._add_scope(key));
+        default:
+            return Properties();
         }
     }
 };
@@ -596,7 +621,7 @@ public struct Properties {
 	struct Properties : IProperties
 	{
 	    using SupportedTypes = std::tuple<
-            void*, int32_t*, uint32_t*, int64_t*, uint64_t*, float*, double*
+            void*, int32_t*, uint32_t*, int64_t*, uint64_t*, float*, double*, Properties*
 		>; // type 1 we store T**, for type 3 we store void**
 	    using VariantType = tuple_to_variant<SupportedTypes>::type;
 		struct Entry
@@ -653,6 +678,25 @@ public struct Properties {
 	    dyslang_properties_set(double)
 	#undef dyslang_properties_set
 
+        Ref<IProperties> _add_scope(NativeString key) SLANG_OVERRIDE
+        {
+            scopes.emplace_back();
+			properties[key] = Entry{ &scopes.back(), {0,0,0}, {0,0,0}, 0, 0 };
+            return _get_scope(key);
+		}
+
+        Ref<IProperties> _get_scope(NativeString key) SLANG_OVERRIDE
+		{
+			return (IProperties**)&std::get<Properties*>(properties[key].ptr);
+        }
+
+        Properties& add_scope(NativeString key) {
+            return *(Properties*)*_add_scope(key);
+		}
+        Properties& get_scope(NativeString key) {
+            return *(Properties*)*_get_scope(key);
+        }
+
 		template <typename T> void set(const NativeString key, T& data)
         {
             vector<size_t, 3> dims = detail::get_dims_v<T>;
@@ -707,14 +751,23 @@ public struct Properties {
 	            result += " ";
 	            result += key;
 	            result += ": ";
-	            std::visit([&value, &result](auto* ptr) {
-	                using T = std::decay_t<std::remove_cv_t<std::remove_reference_t<decltype(ptr)>>>;
+                std::visit(
+                    [&key, &value, &result](auto* ptr) {
+                    using T = std::decay_t<std::remove_cv_t<std::remove_reference_t<decltype(ptr)>>>;
                     result += "Type=" + std::to_string(value.type) + " ";
                     if (ptr == nullptr) {
                         result += "null";
                         return;
-					}
-                    if constexpr (std::is_same_v<decltype(ptr), void*>) {
+                    }
+                    else if constexpr (std::is_same_v<decltype(ptr), Properties*>) {
+                        result += "\n<< ";
+                        result += key;
+						result += " ";
+                    	result += ptr->to_string();
+                        result += ">> ";
+                        result += key;
+                    }
+                    else if constexpr (std::is_same_v<decltype(ptr), void*>) {
                         result += "void*";
                         result += " (total size: " + std::to_string(value.total_size_in_bytes) + " bytes)";
                     }
@@ -727,7 +780,7 @@ public struct Properties {
                             result += std::to_string(ptr[0]);
                         else
                         {
-							if (value.type == 2) result += "DescriptorHandle ";
+                            if (value.type == 2) result += "DescriptorHandle ";
                             std::array<int64_t, 3> stride = {
                                 value.stride_in_bytes[0] / static_cast<int64_t>(sizeof(T)),
                                 value.stride_in_bytes[1] / static_cast<int64_t>(sizeof(T)),
@@ -759,7 +812,7 @@ public struct Properties {
                             result += " (total size: " + std::to_string(value.total_size_in_bytes) + " bytes)";
                         }
                     }
-	            }, value.ptr);
+                }, value.ptr);
 	            result += "\n";
 	        }
 	        return result;
@@ -769,6 +822,7 @@ public struct Properties {
 	        bool operator()(char const* a, char const* b) const { return std::strcmp(a, b) < 0; }
 	    };
 	    std::map<const char*, Entry, cmp_str> properties;
+		std::vector<Properties> scopes;
 	};
 #endif
 }

@@ -137,6 +137,8 @@ namespace __private {
         dyslang_properties_set(float)
         dyslang_properties_set(double)
 #undef dyslang_properties_set
+        Ref<IProperties> _add_scope(NativeString);
+        Ref<IProperties> _get_scope(NativeString);
     };
 
     void prelude(){
@@ -347,6 +349,22 @@ internal struct Properties : dyslang::IProperties {
             i._1 = i._1.zxy;
             i._1[0] = sizeof(T);
             __private::set<value.Element>(key, (value.Element*)&value.data, &i._0[0], &i._1[0], uint64_t(value.count *sizeof(T)), uint64_t(1), __properties);
+        }
+    }
+
+    internal Properties get_scope(NativeString key) {
+        __target_switch
+        {
+        case cpp:
+            return Properties(__properties._get_scope(key));
+        }
+    }
+
+    internal Properties set_scope(NativeString key) {
+        __target_switch
+        {
+        case cpp:
+            return Properties(__properties._add_scope(key));
         }
     }
 };

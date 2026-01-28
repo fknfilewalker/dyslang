@@ -44,6 +44,7 @@ int main(int argc, char* argv[]) {
 	auto id = 777;
 	auto position = std::array<Real, 3>{ 10.0f, 17.0f, 13.0f };
 	auto color = std::array<Real, 3>{ 3.0f, 4.0, 1000 };
+    auto color2 = std::array<Real, 3>{ 13.0f, 99.0, 1000 };
 	auto intensity = static_cast<Real>(15.0f);
     auto transform = dyslang::matrix<Real, 4, 3>{
         1.0f, 2.0f, 3.0f,
@@ -63,6 +64,8 @@ int main(int argc, char* argv[]) {
 	props_in.set("dynamic_transform", dynamic_transform);
     props_in.set("ptr", &props_in);
 	props_in.set("texture", texture);
+    props_in.add_scope("brdf").set("color2", color2);
+
 	auto& t = props_in.get<dyslang::DescriptorHandle>("texture");
     auto& g = props_in.get<std::array<Real, 3>>("color");
     g[0] = 11199;
