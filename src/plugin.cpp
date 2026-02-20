@@ -430,8 +430,9 @@ internal struct Properties : dyslang::IProperties {
     _p = _p->compose();
 
     Slang::ComPtr<ISlangSharedLibrary> dylib;
-    //const SlangResult result = _p->components.back()->getTargetHostCallable(1, dylib.writeRef(), _p->diagnosticsBlob.writeRef());
-    //if (SLANG_FAILED(result)) throw std::runtime_error("slang: dll error");
+    auto ct2 = (slang::IComponentType2*)_p->components.back().get();
+    const SlangResult result = ct2->getTargetHostCallable(1, dylib.writeRef(), _p->diagnosticsBlob.writeRef());
+    if (SLANG_FAILED(result)) throw std::runtime_error("slang: dll error");
 
     typedef void(*TouchFuncType)(IProperties*, const char*, void*);
     typedef size_t(*SizeOfFuncType)(const char*);
