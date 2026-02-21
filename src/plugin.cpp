@@ -430,7 +430,8 @@ internal struct Properties : dyslang::IProperties {
     _p = _p->compose();
 
     Slang::ComPtr<ISlangSharedLibrary> dylib;
-    auto ct2 = (slang::IComponentType2*)_p->components.back().get();
+    auto ct2 = reinterpret_cast<slang::IComponentType2*>(_p->components.back().get());
+    // Hm, dylib is still nullptr after getTargetHostCallable is executed with result being 0
     const SlangResult result = ct2->getTargetHostCallable(1, dylib.writeRef(), _p->diagnosticsBlob.writeRef());
     if (SLANG_FAILED(result)) throw std::runtime_error("slang: dll error");
 
